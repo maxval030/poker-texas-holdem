@@ -1,0 +1,16 @@
+{
+  "name": "@holdem/evaluator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "bench": "bun run src/bench.ts"
+  },
+  "dependencies": {
+    "@pokertools/evaluator": "1.0.16"
+  }
+}

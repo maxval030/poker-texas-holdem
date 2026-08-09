@@ -1,0 +1,32 @@
+{
+  "name": "@holdem/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/main.ts",
+    "start": "bun src/main.ts",
+    "test": "bun test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "1.6.26",
+    "@elysiajs/cors": "1.4.2",
+    "@elysiajs/openapi": "1.4.15",
+    "@holdem/bot": "workspace:*",
+    "@holdem/engine": "workspace:*",
+    "@holdem/evaluator": "workspace:*",
+    "@holdem/protocol": "workspace:*",
+    "better-auth": "1.6.26",
+    "drizzle-orm": "0.45.2",
+    "elysia": "1.4.29",
+    "iovalkey": "0.4.0",
+    "postgres": "3.4.9",
+    "radashi": "12.9.1"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.10"
+  }
+}

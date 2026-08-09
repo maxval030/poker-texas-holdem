@@ -1,0 +1,36 @@
+{
+  "name": "@holdem/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --bun vite dev --port 3000",
+    "build": "bun --bun vite build",
+    "preview": "bun --bun vite preview",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@holdem/bot": "workspace:*",
+    "@holdem/cards": "workspace:*",
+    "@holdem/engine": "workspace:*",
+    "@holdem/evaluator": "workspace:*",
+    "@holdem/protocol": "workspace:*",
+    "@tanstack/react-query": "5.101.4",
+    "@tanstack/react-router": "1.170.25",
+    "@tanstack/react-start": "1.168.42",
+    "better-auth": "1.6.26",
+    "motion": "13.0.0",
+    "radashi": "12.9.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zustand": "5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "tailwindcss": "4.3.3",
+    "vite": "8.2.1"
+  }
+}
