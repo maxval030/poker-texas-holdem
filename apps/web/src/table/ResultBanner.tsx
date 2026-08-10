@@ -40,11 +40,13 @@ export const ResultBanner = memo(function ResultBanner() {
 
   const deltas = [...result.deltas].sort((a, b) => a.seat - b.seat)
   const showControls = result.canShow && !result.settled
+  const cardHeight = board.cardWidth * 1.5
+  const top = board.cy - cardHeight / 2 - 120
 
   return (
     <div
       className="absolute z-30 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-      style={{ left: board.cx, top: board.cy, width: 520 }}
+      style={{ left: board.cx, top, width: 520 }}
       role="status"
     >
       <div className="relative w-full overflow-hidden rounded-2xl border border-brass-400/35 bg-black/75 px-5 pb-4 pt-4 text-center shadow-lg backdrop-blur-sm">
