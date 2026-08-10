@@ -6,6 +6,7 @@ import { assertProductionSecrets, env } from './env.ts'
 import { tableWs } from './realtime/ws.ts'
 import { startJanitor } from './rooms/lifecycle.ts'
 import { roomRoutes, ticketRoutes } from './rooms/routes.ts'
+import { statsRoutes } from './stats/routes.ts'
 import { connectValkey } from './valkey.ts'
 
 assertProductionSecrets()
@@ -34,6 +35,7 @@ const app = new Elysia()
         tags: [
           { name: 'Rooms', description: 'Private cash tables' },
           { name: 'Realtime', description: 'Ticket issuance for WebSocket upgrades' },
+          { name: 'Stats', description: 'Public live counters' },
         ],
       },
     }),
@@ -43,6 +45,7 @@ const app = new Elysia()
     detail: { summary: 'Liveness probe', tags: ['Realtime'] },
   })
   .use(roomRoutes)
+  .use(statsRoutes)
   .use(ticketRoutes)
   .use(tableWs)
   .listen({

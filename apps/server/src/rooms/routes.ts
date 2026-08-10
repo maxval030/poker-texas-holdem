@@ -3,6 +3,7 @@ import { authPlugin } from '../auth-plugin.ts'
 import { ACTION_CLOCK_OPTIONS_MS } from '../db/schema.ts'
 import { issueWsTicket } from '../valkey.ts'
 import {
+  closeRoomAsHost,
   createRoom,
   findOpenRoomByCode,
   findOpenRoomById,
@@ -22,7 +23,7 @@ export const roomRoutes = new Elysia({ prefix: '/rooms' })
     '/',
     async ({ user, body, set }) => {
       try {
-        const created = await createRoom(user.id, body)
+        const created = await createRoom(user.id, body, Boolean(user.isAnonymous))
         set.status = 201
         return publicRoom(created)
       } catch (error) {
@@ -91,6 +92,29 @@ export const roomRoutes = new Elysia({ prefix: '/rooms' })
       params: t.Object({ id: t.String({ minLength: 8 }) }),
       detail: {
         summary: 'Look up an open room by id',
+        tags: ['Rooms'],
+      },
+    },
+  )
+  .delete(
+    '/:id',
+    async ({ user, params, set }) => {
+      try {
+        await closeRoomAsHost(params.id, user.id)
+        return { ok: true as const }
+      } catch (error) {
+        if (error instanceof RoomError) {
+          set.status = error.status
+          return { error: error.message }
+        }
+        throw error
+      }
+    },
+    {
+      auth: true,
+      params: t.Object({ id: t.String({ minLength: 8 }) }),
+      detail: {
+        summary: 'Close a table immediately (host only)',
         tags: ['Rooms'],
       },
     },

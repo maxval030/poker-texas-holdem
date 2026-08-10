@@ -1,5 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { fetchOnlineStats } from '../api/rooms.ts'
 import { LanguageSwitch, useLocale } from '../i18n/locale.tsx'
+
+const STATS_POLL_MS = 30_000
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -7,6 +11,28 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   const { t } = useLocale()
+  const [stats, setStats] = useState<{ rooms: number; players: number } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        const next = await fetchOnlineStats()
+        if (!cancelled) setStats(next)
+      } catch {
+        if (!cancelled) setStats(null)
+      }
+    }
+
+    void load()
+    const id = setInterval(() => void load(), STATS_POLL_MS)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [])
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-6 py-12">
       <div
@@ -18,6 +44,11 @@ function Home() {
       <header className="text-center">
         <h1 className="text-3xl font-bold tracking-tight text-brass-300">{t('brand')}</h1>
         <p className="mt-2 text-sm text-cream/70">{t('home.tagline')}</p>
+        {stats && (
+          <p className="mt-1 text-xs text-cream/50">
+            {t('home.onlineStats', { rooms: stats.rooms, players: stats.players })}
+          </p>
+        )}
       </header>
 
       <nav className="flex flex-col gap-3">

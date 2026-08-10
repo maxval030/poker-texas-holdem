@@ -2,12 +2,27 @@ import { and, eq, inArray, lt, ne } from 'drizzle-orm'
 import { db } from '../db/client.ts'
 import { room } from '../db/schema.ts'
 import { deleteRoomKeys, getOwner } from '../realtime/bus.ts'
+import { clearRoomPresence } from '../realtime/presence.ts'
 import { roomRegistry } from '../realtime/registry.ts'
 import { getPublisher } from '../valkey.ts'
+import { maybeSendClosingWarning, notifyDormantClosing } from './closing.ts'
+import {
+  CREATED_EMPTY_MS,
+  DORMANT_CLOSE_MS,
+  IDLE_NO_ACTION_MS,
+  JANITOR_INTERVAL_MS,
+  ROOM_MAX_LIFETIME_MS,
+} from './constants.ts'
 
-export const CREATED_EMPTY_MS = 2 * 60_000
-export const DORMANT_CLOSE_MS = 5 * 60_000
-export const JANITOR_INTERVAL_MS = 30_000
+export {
+  CLOSING_WARNING_MS,
+  CREATED_EMPTY_MS,
+  DORMANT_CLOSE_MS,
+  IDLE_NO_ACTION_MS,
+  JANITOR_INTERVAL_MS,
+  ROOM_MAX_LIFETIME_MS,
+} from './constants.ts'
+
 const JANITOR_LOCK_KEY = 'holdem:janitor'
 const JANITOR_LOCK_TTL_SECONDS = 25
 
@@ -16,8 +31,9 @@ const JANITOR_LOCK_TTL_SECONDS = 25
  * Postgres row closed. Safe to call when the room is only half-alive.
  */
 export async function teardownRoom(roomId: string, reason: string): Promise<void> {
-  await roomRegistry.dispose(roomId)
+  await roomRegistry.dispose(roomId, reason)
   await deleteRoomKeys(roomId)
+  await clearRoomPresence(roomId)
   await db
     .update(room)
     .set({
@@ -29,8 +45,19 @@ export async function teardownRoom(roomId: string, reason: string): Promise<void
   console.info(`room ${roomId} closed (${reason})`)
 }
 
-export async function markRoomDormant(roomId: string): Promise<void> {
+export async function markRoomActive(roomId: string): Promise<void> {
   await db
+    .update(room)
+    .set({
+      status: 'active',
+      lastHumanAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(room.id, roomId))
+}
+
+export async function markRoomDormant(roomId: string): Promise<void> {
+  const [updated] = await db
     .update(room)
     .set({
       status: 'dormant',
@@ -38,6 +65,11 @@ export async function markRoomDormant(roomId: string): Promise<void> {
       updatedAt: new Date(),
     })
     .where(and(eq(room.id, roomId), ne(room.status, 'closed')))
+    .returning()
+
+  if (updated) {
+    await notifyDormantClosing(updated)
+  }
 }
 
 /**
@@ -56,6 +88,40 @@ export async function runJanitorPass(): Promise<number> {
 
   let closed = 0
   const now = Date.now()
+
+  const openForWarnings = await db
+    .select()
+    .from(room)
+    .where(inArray(room.status, ['created', 'active', 'dormant']))
+
+  for (const row of openForWarnings) {
+    await maybeSendClosingWarning(row, now)
+  }
+
+  const sessionExpired = await db
+    .select({ id: room.id })
+    .from(room)
+    .where(and(ne(room.status, 'closed'), lt(room.createdAt, new Date(now - ROOM_MAX_LIFETIME_MS))))
+
+  for (const row of sessionExpired) {
+    await teardownRoom(row.id, 'session expired')
+    closed += 1
+  }
+
+  const idleStale = await db
+    .select({ id: room.id })
+    .from(room)
+    .where(
+      and(
+        inArray(room.status, ['active', 'dormant']),
+        lt(room.lastHumanActionAt, new Date(now - IDLE_NO_ACTION_MS)),
+      ),
+    )
+
+  for (const row of idleStale) {
+    await teardownRoom(row.id, 'idle timeout')
+    closed += 1
+  }
 
   const createdStale = await db
     .select({ id: room.id })
@@ -77,7 +143,6 @@ export async function runJanitorPass(): Promise<number> {
     closed += 1
   }
 
-  // Orphans: Postgres still says open, but no owner and no snapshot remain.
   const openRooms = await db
     .select({ id: room.id, status: room.status })
     .from(room)

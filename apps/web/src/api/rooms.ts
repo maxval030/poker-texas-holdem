@@ -57,3 +57,11 @@ export function issueWsTicket(roomId: string): Promise<{
 }> {
   return api('/ws-ticket', { method: 'POST', body: JSON.stringify({ roomId }) })
 }
+
+export function fetchOnlineStats(): Promise<{ rooms: number; players: number }> {
+  return api('/stats/online')
+}
+
+export function closeRoom(roomId: string): Promise<{ ok: true }> {
+  return api(`/rooms/${encodeURIComponent(roomId)}`, { method: 'DELETE' })
+}
