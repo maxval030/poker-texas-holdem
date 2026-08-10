@@ -1,8 +1,9 @@
 import { Elysia } from 'elysia'
+import { parseGateCookie } from '../gate/session.ts'
 import { clientIp } from './ip.ts'
 import { hitRateLimit } from './limit.ts'
 
-export type RateLimitKey = 'ip' | 'user'
+export type RateLimitKey = 'ip' | 'user' | 'gate'
 
 export interface RateLimitOptions {
   limit: number
@@ -31,8 +32,13 @@ export const rateLimitPlugin = new Elysia({ name: 'rate-limit' })
               : undefined
 
           const scope = options.scope ?? 'default'
+          const gateId = parseGateCookie(request.headers.get('cookie'))
           const keyPart =
-            options.key === 'user' && authUser ? authUser.id : requestIp(request)
+            options.key === 'gate' && gateId
+              ? gateId
+              : options.key === 'user' && authUser
+                ? authUser.id
+                : requestIp(request)
           const result = await hitRateLimit(
             `${scope}:${keyPart}`,
             options.limit,

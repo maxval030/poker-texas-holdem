@@ -78,7 +78,7 @@ export const auth = betterAuth({
       }
 
       const ip = clientIp(ctx.request!)
-      const limited = await hitRateLimit(`auth:anonymous:${ip}`, 10, 60)
+      const limited = await hitRateLimit(`auth:anonymous:${ip}`, 30, 60)
       if (limited.limited) {
         throw new APIError('TOO_MANY_REQUESTS', { message: 'rate limit exceeded' })
       }

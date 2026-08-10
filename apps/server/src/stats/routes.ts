@@ -11,7 +11,7 @@ export const statsRoutes = new Elysia({ prefix: '/stats' })
     async () => getOnlineStats(),
     {
       gate: true,
-      rateLimit: { limit: 120, windowSeconds: 3_600, key: 'ip', scope: 'stats:online' },
+      rateLimit: { limit: 180, windowSeconds: 3_600, key: 'gate', scope: 'stats:online' },
       detail: {
         summary: 'Live table and player counts',
         tags: ['Stats'],

@@ -74,6 +74,7 @@ export const roomRoutes = new Elysia({ prefix: '/rooms' })
     {
       auth: true,
       gate: true,
+      rateLimit: { limit: 30, windowSeconds: 60, key: 'ip', scope: 'rooms:lookup-code' },
       params: t.Object({ code: t.String({ minLength: 4, maxLength: 8 }) }),
       detail: {
         summary: 'Look up an open room by invite code',
