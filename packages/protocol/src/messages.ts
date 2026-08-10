@@ -8,7 +8,10 @@ import type {
 } from '@holdem/engine'
 
 /** Bumped whenever the message shapes change, so a stale tab is told to reload. */
-export const PROTOCOL_VERSION = 2
+export const PROTOCOL_VERSION = 3
+
+export const CLOSING_REASONS = ['session-expiring', 'idle-timeout', 'dormant-timeout'] as const
+export type ClosingReason = (typeof CLOSING_REASONS)[number]
 
 export const EMOTES = ['nice-hand', 'thanks', 'wow', 'thinking', 'chips', 'oops'] as const
 export type Emote = (typeof EMOTES)[number]
@@ -57,6 +60,7 @@ export type ServerMessage =
   | { type: 'update'; update: TableUpdate; self: SelfInfo }
   | { type: 'emote'; seat: number; emote: Emote }
   | { type: 'rejected'; reason: string }
+  | { type: 'closing-soon'; reason: ClosingReason; closesAt: number }
   | { type: 'closed'; reason: string }
 
 export type ConnectionStatus = 'connecting' | 'open' | 'reconnecting' | 'closed'

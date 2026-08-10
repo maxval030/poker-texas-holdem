@@ -16,9 +16,8 @@ import {
   type SelfInfo,
   type ServerMessage,
 } from '@holdem/protocol'
-import { and, eq, ne } from 'drizzle-orm'
-import { db } from '../db/client.ts'
-import { room } from '../db/schema.ts'
+import { isHumanAction, touchHumanAction } from '../rooms/activity.ts'
+import { markRoomActive, markRoomDormant } from '../rooms/lifecycle.ts'
 import {
   type BusMessage,
   deleteRoomKeys,
@@ -32,6 +31,12 @@ import {
   subscribeRoom,
   tryAcquireOwnership,
 } from './bus.ts'
+import {
+  joinPresence,
+  leavePresence,
+  presenceRefreshIntervalMs,
+  refreshPresence,
+} from './presence.ts'
 
 export interface SocketSink {
   send(message: ServerMessage): void
@@ -42,6 +47,7 @@ interface MemberConnection {
   userId: string
   name: string
   sockets: Set<SocketSink>
+  presenceRefresh: ReturnType<typeof setInterval> | null
 }
 
 interface LiveRoom {
@@ -84,8 +90,17 @@ export class RoomRegistry {
 
     let member = live.members.get(params.userId)
     if (!member) {
-      member = { userId: params.userId, name: params.name, sockets: new Set() }
+      member = {
+        userId: params.userId,
+        name: params.name,
+        sockets: new Set(),
+        presenceRefresh: null,
+      }
       live.members.set(params.userId, member)
+      await joinPresence(params.roomId, params.userId)
+      member.presenceRefresh = setInterval(() => {
+        void refreshPresence(params.userId)
+      }, presenceRefreshIntervalMs())
     } else {
       member.name = params.name
     }
@@ -106,6 +121,10 @@ export class RoomRegistry {
     if (!live) return
     const member = live.members.get(userId)
     if (!member) return
+
+    if (isHumanAction(message)) {
+      void touchHumanAction(roomId)
+    }
 
     void this.handleReceive(live, member, message)
   }
@@ -158,6 +177,12 @@ export class RoomRegistry {
     member.sockets.delete(socket)
     if (member.sockets.size > 0) return
 
+    if (member.presenceRefresh) {
+      clearInterval(member.presenceRefresh)
+      member.presenceRefresh = null
+    }
+    void leavePresence(roomId, userId)
+
     live.members.delete(userId)
     if (live.owning && live.host) live.host.disconnect(userId)
 
@@ -171,11 +196,24 @@ export class RoomRegistry {
     return this.rooms.get(roomId)
   }
 
-  async dispose(roomId: string): Promise<void> {
+  broadcastToRoom(roomId: string, message: ServerMessage): void {
     const live = this.rooms.get(roomId)
     if (!live) return
     for (const member of live.members.values()) {
-      for (const socket of member.sockets) socket.close(1001, 'room closed')
+      for (const socket of member.sockets) socket.send(message)
+    }
+  }
+
+  async dispose(roomId: string, reason = 'room closed'): Promise<void> {
+    const live = this.rooms.get(roomId)
+    if (!live) return
+    const closedMessage: ServerMessage = { type: 'closed', reason }
+    for (const member of live.members.values()) {
+      if (member.presenceRefresh) clearInterval(member.presenceRefresh)
+      for (const socket of member.sockets) {
+        socket.send(closedMessage)
+        socket.close(1001, reason)
+      }
     }
     await this.closeLocal(roomId)
     await deleteRoomKeys(roomId)
@@ -297,6 +335,9 @@ export class RoomRegistry {
       }
       if (!live.owning || !live.host) return
       if (message.originId === this.instanceId) return
+      if (isHumanAction(message.message)) {
+        void touchHumanAction(live.id)
+      }
       live.host.ensureMember({ userId: message.userId, name: message.name })
       live.host.receive(message.userId, message.message)
       return
@@ -421,26 +462,4 @@ function createEmptyState(config: TableConfig): TableState {
     hand: null,
     status: 'waiting',
   }
-}
-
-async function markRoomActive(roomId: string): Promise<void> {
-  await db
-    .update(room)
-    .set({
-      status: 'active',
-      lastHumanAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(room.id, roomId))
-}
-
-async function markRoomDormant(roomId: string): Promise<void> {
-  await db
-    .update(room)
-    .set({
-      status: 'dormant',
-      lastHumanAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(and(eq(room.id, roomId), ne(room.status, 'closed')))
 }

@@ -75,6 +75,10 @@ export const room = pgTable(
     closedAt: timestamp('closed_at', { withTimezone: true }),
     /** Last time a connected human was seen. Used for the dormant → closed timer. */
     lastHumanAt: timestamp('last_human_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Last time a human sent a gameplay command (not ping/resync). */
+    lastHumanActionAt: timestamp('last_human_action_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [uniqueIndex('room_code_unique').on(table.code)],
 )

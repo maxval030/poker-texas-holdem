@@ -7,6 +7,7 @@ export type MessageKey =
   | 'home.create'
   | 'home.join'
   | 'home.demo'
+  | 'home.onlineStats'
   | 'create.title'
   | 'create.subtitle'
   | 'create.name'
@@ -15,6 +16,7 @@ export type MessageKey =
   | 'create.buyIn'
   | 'create.submit'
   | 'create.creating'
+  | 'create.tooManyOpen'
   | 'join.title'
   | 'join.subtitle'
   | 'join.name'
@@ -53,6 +55,11 @@ export type MessageKey =
   | 'table.dealer'
   | 'table.addBot'
   | 'table.deal'
+  | 'table.closeTable'
+  | 'table.closeConfirm'
+  | 'closing.session'
+  | 'closing.idle'
+  | 'closing.dormant'
   | 'status.connecting'
   | 'status.open'
   | 'status.reconnecting'
@@ -98,6 +105,7 @@ const en = {
   'home.create': 'Create a private table',
   'home.join': 'Join with a code',
   'home.demo': 'Layout preview',
+  'home.onlineStats': '{rooms} tables live · {players} players online',
   'create.title': 'Create a private table',
   'create.subtitle': 'Friends join with the code. No public lobby.',
   'create.name': 'Display name',
@@ -106,6 +114,7 @@ const en = {
   'create.buyIn': 'Buy-in {min} – {max} · unlimited rebuy',
   'create.submit': 'Create table',
   'create.creating': 'Creating…',
+  'create.tooManyOpen': 'You already have the maximum number of open tables. Close one to create another.',
   'join.title': 'Join a table',
   'join.subtitle': 'Enter the code a friend sent you.',
   'join.name': 'Display name',
@@ -144,6 +153,11 @@ const en = {
   'table.dealer': 'dealer button',
   'table.addBot': 'Add bot',
   'table.deal': 'Deal',
+  'table.closeTable': 'Close table',
+  'table.closeConfirm': 'Close this table for everyone? This cannot be undone.',
+  'closing.session': 'Session ends in {time} — this table will close',
+  'closing.idle': 'No activity — table closes in {time}. Make a move to stay.',
+  'closing.dormant': 'No one connected — table closes in {time}',
   'status.connecting': 'connecting',
   'status.open': 'open',
   'status.reconnecting': 'reconnecting',
@@ -190,6 +204,7 @@ const th: Record<MessageKey, string> = {
   'home.create': 'สร้างโต๊ะส่วนตัว',
   'home.join': 'เข้าด้วยรหัส',
   'home.demo': 'ดูเลย์เอาต์',
+  'home.onlineStats': '{rooms} โต๊ะเล่น · {players} คนออนไลน์',
   'create.title': 'สร้างโต๊ะส่วนตัว',
   'create.subtitle': 'เพื่อนเข้าด้วยรหัส ไม่มีล็อบบี้สาธารณะ',
   'create.name': 'ชื่อที่แสดง',
@@ -198,6 +213,7 @@ const th: Record<MessageKey, string> = {
   'create.buyIn': 'บายอิน {min} – {max} · รีบายไม่จำกัด',
   'create.submit': 'สร้างโต๊ะ',
   'create.creating': 'กำลังสร้าง…',
+  'create.tooManyOpen': 'คุณมีโต๊ะที่เปิดอยู่ครบแล้ว ปิดโต๊ะเดิมก่อนสร้างใหม่',
   'join.title': 'เข้าร่วมโต๊ะ',
   'join.subtitle': 'ใส่รหัสที่เพื่อนส่งมา',
   'join.name': 'ชื่อที่แสดง',
@@ -236,6 +252,11 @@ const th: Record<MessageKey, string> = {
   'table.dealer': 'ปุ่มดีลเลอร์',
   'table.addBot': 'เพิ่มบอท',
   'table.deal': 'แจกไพ่',
+  'table.closeTable': 'ปิดโต๊ะ',
+  'table.closeConfirm': 'ปิดโต๊ะนี้สำหรับทุกคน? ทำแล้วย้อนกลับไม่ได้',
+  'closing.session': 'เซสชันจบใน {time} — โต๊ะจะปิด',
+  'closing.idle': 'ไม่มีการเล่น — โต๊ะจะปิดใน {time} เล่นต่อเพื่ออยู่ต่อ',
+  'closing.dormant': 'ไม่มีใครเชื่อมต่อ — โต๊ะจะปิดใน {time}',
   'status.connecting': 'กำลังเชื่อม',
   'status.open': 'พร้อม',
   'status.reconnecting': 'เชื่อมใหม่',

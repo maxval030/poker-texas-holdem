@@ -63,7 +63,8 @@ function CreateRoomPage() {
       })
       await navigate({ to: '/room/$code', params: { code: room.code } })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'could not create the room')
+      const message = err instanceof Error ? err.message : 'could not create the room'
+      setError(message === 'too many open tables' ? t('create.tooManyOpen') : message)
     } finally {
       setBusy(false)
     }

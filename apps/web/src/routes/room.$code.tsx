@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { fetchRoomByCode, type PublicRoom } from '../api/rooms.ts'
+import { closeRoom, fetchRoomByCode, type PublicRoom } from '../api/rooms.ts'
 import { authClient } from '../auth/client.ts'
 import {
   DISPLAY_NAME_MAX_BASE,
@@ -10,7 +10,6 @@ import {
 import { ensureNamedPlayer } from '../auth/ensureNamedPlayer.ts'
 import { LanguageSwitch, useLocale } from '../i18n/locale.tsx'
 import { createOnlineTransport } from '../online/transport.ts'
-import { chips } from '../table/format.ts'
 import { useTableStore } from '../table/store.ts'
 import { TableScreen } from '../table/TableScreen.tsx'
 
@@ -154,21 +153,45 @@ function OnlineTable({ room }: { room: PublicRoom }) {
   return (
     <div className="relative h-dvh">
       <TableScreen title={`Room ${room.code}`} />
-      <OnlineChrome
-        code={room.code}
-        blinds={`${chips(room.config.smallBlind)} / ${chips(room.config.bigBlind)}`}
-      />
+      <OnlineChrome room={room} />
     </div>
   )
 }
 
-function OnlineChrome({ code, blinds }: { code: string; blinds: string }) {
+function OnlineChrome({ room }: { room: PublicRoom }) {
+  const navigate = useNavigate()
   const send = useTableStore((state) => state.send)
   const seated = useTableStore((state) => state.self?.seat ?? null)
   const view = useTableStore((state) => state.view)
   const { t } = useLocale()
+  const [hostUserId, setHostUserId] = useState<string | null>(null)
+  const [closing, setClosing] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const session = await authClient.getSession()
+      if (!cancelled) setHostUserId(session.data?.user?.id ?? null)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const emptySeat = view?.seats.findIndex((seat) => !seat.occupant) ?? -1
+  const isHost = hostUserId !== null && hostUserId === room.hostUserId
+
+  const onCloseTable = async () => {
+    if (!window.confirm(t('table.closeConfirm'))) return
+    setClosing(true)
+    try {
+      await closeRoom(room.id)
+      await navigate({ to: '/' })
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'could not close table')
+      setClosing(false)
+    }
+  }
 
   return (
     <div
@@ -176,6 +199,16 @@ function OnlineChrome({ code, blinds }: { code: string; blinds: string }) {
       style={{ paddingTop: 'max(2.75rem, calc(env(safe-area-inset-top) + 2.25rem))' }}
     >
       <div className="pointer-events-auto flex gap-1">
+        {isHost && (
+          <button
+            type="button"
+            disabled={closing}
+            onClick={() => void onCloseTable()}
+            className="rounded-full bg-[#7a2f2f]/80 px-3 py-1 text-cream/90 disabled:opacity-50"
+          >
+            {t('table.closeTable')}
+          </button>
+        )}
         {emptySeat >= 0 && (
           <button
             type="button"
@@ -195,9 +228,7 @@ function OnlineChrome({ code, blinds }: { code: string; blinds: string }) {
           </button>
         )}
       </div>
-      <span className="sr-only">
-        {code} {blinds}
-      </span>
+      <span className="sr-only">{room.code}</span>
     </div>
   )
 }

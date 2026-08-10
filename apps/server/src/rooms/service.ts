@@ -1,5 +1,5 @@
 import type { TableConfig } from '@holdem/engine'
-import { and, eq, ne } from 'drizzle-orm'
+import { and, count, eq, ne } from 'drizzle-orm'
 import { db } from '../db/client.ts'
 import {
   ACTION_CLOCK_OPTIONS_MS,
@@ -8,6 +8,7 @@ import {
   room,
 } from '../db/schema.ts'
 import { generateRoomCode } from './codes.ts'
+import { MAX_OPEN_ROOMS_GUEST, MAX_OPEN_ROOMS_REGISTERED } from './constants.ts'
 
 const MAX_CODE_ATTEMPTS = 8
 
@@ -70,7 +71,24 @@ function validateCreateBody(body: CreateRoomBody): TableConfig {
   }
 }
 
-export async function createRoom(hostUserId: string, body: CreateRoomBody) {
+export async function countOpenRoomsForHost(hostUserId: string): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(room)
+    .where(and(eq(room.hostUserId, hostUserId), ne(room.status, 'closed')))
+  return Number(row?.total ?? 0)
+}
+
+export async function assertCanCreateRoom(hostUserId: string, isAnonymous: boolean): Promise<void> {
+  const limit = isAnonymous ? MAX_OPEN_ROOMS_GUEST : MAX_OPEN_ROOMS_REGISTERED
+  const open = await countOpenRoomsForHost(hostUserId)
+  if (open >= limit) {
+    throw new RoomError('too many open tables', 429)
+  }
+}
+
+export async function createRoom(hostUserId: string, body: CreateRoomBody, isAnonymous = false) {
+  await assertCanCreateRoom(hostUserId, isAnonymous)
   const config = validateCreateBody(body)
   const id = crypto.randomUUID()
 
@@ -90,6 +108,7 @@ export async function createRoom(hostUserId: string, body: CreateRoomBody) {
       if (!created) throw new RoomError('failed to create room', 500)
       return created
     } catch (error) {
+      if (error instanceof RoomError) throw error
       // Unique violation on the invite code — try another.
       if (isUniqueViolation(error) && attempt + 1 < MAX_CODE_ATTEMPTS) continue
       throw error
@@ -124,6 +143,15 @@ export async function findOpenRoomById(id: string) {
 
   if (!found) throw new RoomError('room not found', 404)
   return found
+}
+
+export async function closeRoomAsHost(roomId: string, hostUserId: string): Promise<void> {
+  const found = await findOpenRoomById(roomId)
+  if (found.hostUserId !== hostUserId) {
+    throw new RoomError('only the host can close this table', 403)
+  }
+  const { teardownRoom } = await import('./lifecycle.ts')
+  await teardownRoom(roomId, 'host closed table')
 }
 
 export function publicRoom(row: typeof room.$inferSelect) {

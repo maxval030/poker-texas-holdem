@@ -3,6 +3,7 @@ import { MAX_SEATS } from '@holdem/engine'
 import { EMOTES } from '@holdem/protocol'
 import { useCallback, useEffect, useState } from 'react'
 import { LanguageSwitch, useLocale } from '../i18n/locale.tsx'
+import type { MessageKey } from '../i18n/messages.ts'
 import { ActionBar } from './ActionBar.tsx'
 import { Board } from './Board.tsx'
 import { ChipFX } from './ChipFX.tsx'
@@ -31,6 +32,8 @@ function TableScreenBody({ title }: { title: string }) {
   const config = useTableStore((state) => state.view?.config ?? null)
   const status = useTableStore((state) => state.status)
   const rejection = useTableStore((state) => state.rejection)
+  const closingWarning = useTableStore((state) => state.closingWarning)
+  const clockSkewMs = useTableStore((state) => state.clockSkewMs)
   const dismissRejection = useTableStore((state) => state.dismissRejection)
   const { t } = useLocale()
   const { enabled: assistEnabled, setEnabled: setAssistEnabled } = useMadeHandAssist()
@@ -107,6 +110,14 @@ function TableScreenBody({ title }: { title: string }) {
       <EmoteTray />
       <ActionBar />
 
+      {closingWarning && (
+        <ClosingBanner
+          reason={closingWarning.reason}
+          closesAt={closingWarning.closesAt}
+          clockSkewMs={clockSkewMs}
+        />
+      )}
+
       {rejection && (
         <button
           type="button"
@@ -118,6 +129,46 @@ function TableScreenBody({ title }: { title: string }) {
       )}
 
       {chartOpen && <HandChart onClose={() => setChartOpen(false)} />}
+    </div>
+  )
+}
+
+const CLOSING_MESSAGE: Record<string, MessageKey> = {
+  'session-expiring': 'closing.session',
+  'idle-timeout': 'closing.idle',
+  'dormant-timeout': 'closing.dormant',
+}
+
+function formatRemaining(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+function ClosingBanner({
+  reason,
+  closesAt,
+  clockSkewMs,
+}: {
+  reason: keyof typeof CLOSING_MESSAGE
+  closesAt: number
+  clockSkewMs: number
+}) {
+  const { t } = useLocale()
+  const [remaining, setRemaining] = useState(() => closesAt - (Date.now() + clockSkewMs))
+
+  useEffect(() => {
+    const tick = () => setRemaining(closesAt - (Date.now() + clockSkewMs))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [closesAt, clockSkewMs])
+
+  const key = CLOSING_MESSAGE[reason] ?? 'closing.idle'
+  return (
+    <div className="pointer-events-none absolute inset-x-4 top-24 z-30 mx-auto max-w-md rounded-lg border border-amber-500/40 bg-amber-950/90 px-4 py-2 text-center text-sm text-amber-100 shadow-lg">
+      {t(key, { time: formatRemaining(remaining) })}
     </div>
   )
 }

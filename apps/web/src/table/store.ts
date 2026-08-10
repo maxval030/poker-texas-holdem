@@ -1,6 +1,7 @@
 import type { GameEvent, HandPlayerView, Seat, TableStateView } from '@holdem/engine'
 import type {
   ClientMessage,
+  ClosingReason,
   ConnectionStatus,
   Emote,
   SelfInfo,
@@ -16,6 +17,11 @@ export interface SeatEmote {
   nonce: number
 }
 
+export interface ClosingWarning {
+  reason: ClosingReason
+  closesAt: number
+}
+
 interface TableStore {
   status: ConnectionStatus
   view: TableStateView | null
@@ -28,6 +34,7 @@ interface TableStore {
   events: GameEvent[]
   eventNonce: number
   rejection: string | null
+  closingWarning: ClosingWarning | null
   transport: Transport | null
 
   attach(transport: Transport): () => void
@@ -48,6 +55,7 @@ export const useTableStore = create<TableStore>((set, get) => ({
   events: [],
   eventNonce: 0,
   rejection: null,
+  closingWarning: null,
   transport: null,
 
   attach(transport) {
@@ -61,6 +69,7 @@ export const useTableStore = create<TableStore>((set, get) => ({
       events: [],
       eventNonce: 0,
       rejection: null,
+      closingWarning: null,
     })
 
     const unsubscribe = transport.subscribe((event: TransportEvent) => {
@@ -95,11 +104,16 @@ export const useTableStore = create<TableStore>((set, get) => ({
             },
           }))
           return
+        case 'closing-soon':
+          set({
+            closingWarning: { reason: message.reason, closesAt: message.closesAt },
+          })
+          return
         case 'rejected':
           set({ rejection: message.reason })
           return
         case 'closed':
-          set({ status: 'closed', rejection: message.reason })
+          set({ status: 'closed', rejection: message.reason, closingWarning: null })
           return
         default:
           return
