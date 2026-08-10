@@ -14,23 +14,24 @@ export async function ensureSignedIn(displayName?: string): Promise<{
   isAnonymous: boolean
 }> {
   const existing = await authClient.getSession()
-  if (existing.data?.user) {
-    return summarise(existing.data.user)
-  }
+  let user = existing.data?.user ?? null
 
-  const result = await authClient.signIn.anonymous()
-  if (result.error || !result.data?.user) {
-    throw new Error(result.error?.message ?? 'could not start a guest session')
+  if (!user) {
+    const result = await authClient.signIn.anonymous()
+    if (result.error || !result.data?.user) {
+      throw new Error(result.error?.message ?? 'could not start a guest session')
+    }
+    user = result.data.user
   }
 
   const trimmed = displayName?.trim()
-  if (trimmed && trimmed !== result.data.user.name) {
+  if (trimmed && trimmed !== user.name) {
     await authClient.updateUser({ name: trimmed })
     const refreshed = await authClient.getSession()
     if (refreshed.data?.user) return summarise(refreshed.data.user)
   }
 
-  return summarise(result.data.user)
+  return summarise(user)
 }
 
 function summarise(user: { id: string; name: string; isAnonymous?: boolean | null }) {
