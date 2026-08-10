@@ -178,3 +178,16 @@ export function useBoard(): { cards: number[]; potTotal: number; street: string 
     })),
   )
 }
+
+const NO_SEATS: Seat[] = []
+
+export function useHandResult() {
+  return useTableStore(
+    useShallow((state) => ({
+      result: state.view?.result ?? null,
+      seats: state.view?.seats ?? NO_SEATS,
+      viewerSeat: state.view?.viewerSeat ?? null,
+      clockSkewMs: state.clockSkewMs,
+    })),
+  )
+}
