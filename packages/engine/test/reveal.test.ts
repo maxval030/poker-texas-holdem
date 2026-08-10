@@ -55,6 +55,16 @@ function foldWinHumanVsBot(): { state: TableState; events: ReturnType<typeof red
   return applyWithEvents(state, { type: 'act', seat: 1, action: { type: 'fold' } })
 }
 
+/** Heads-up: human folds preflop; bot wins with no human eligible for reveal. */
+function foldWinBotVsHuman(): { state: TableState; events: ReturnType<typeof reduce>['events'] } {
+  let state = createTable(testConfig({ maxSeats: 2 }))
+  state = apply(state, { type: 'sit', seat: 0, occupant: human(0), buyIn: 100 })
+  state = apply(state, { type: 'sit', seat: 1, occupant: bot(1), buyIn: 100 })
+  state = apply(state, { type: 'start-hand' })
+  // Heads-up: seat 0 acts first and folds — bot takes the pot.
+  return applyWithEvents(state, { type: 'act', seat: 0, action: { type: 'fold' } })
+}
+
 describe('reveal window', () => {
   test('fold win starts reveal with only the human winner pending', () => {
     const { state, events } = foldWinHumanVsBot()
@@ -114,5 +124,29 @@ describe('reveal window', () => {
     expect(state.hand?.complete).toBe(true)
     expect(state.hand?.reveal?.choices).toEqual([{ seat: 1, choice: 'pending' }])
     expect(state.hand?.reveal?.settled).toBe(false)
+  })
+
+  test('bot fold-win settles immediately with no human eligible', () => {
+    const { state, events } = foldWinBotVsHuman()
+    const ctx = testContext()
+
+    expect(state.hand?.complete).toBe(true)
+    expect(state.hand?.reveal).not.toBeNull()
+    expect(state.hand?.reveal?.deadline).toBeNull()
+    expect(state.hand?.reveal?.settled).toBe(true)
+    expect(state.hand?.reveal?.choices).toEqual([])
+    expect(events.some((e) => e.type === 'reveal-started')).toBe(true)
+    expect(events.some((e) => e.type === 'reveal-settled')).toBe(true)
+    const started = events.find((e) => e.type === 'reveal-started')
+    expect(started).toEqual({
+      type: 'reveal-started',
+      deadline: null,
+      seats: [],
+    })
+
+    // Next hand can start without timeout-reveal.
+    const next = reduce(state, { type: 'start-hand' }, ctx)
+    expect(next.events.some((e) => e.type === 'error')).toBe(false)
+    expect(next.state.hand?.complete).toBe(false)
   })
 })
