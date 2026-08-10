@@ -9,6 +9,7 @@ import { ChipFX } from './ChipFX.tsx'
 import { EMOTE_LABEL_KEY, EMOTE_MARK } from './emotes.tsx'
 import { Felt } from './Felt.tsx'
 import { chips } from './format.ts'
+import { HandChart } from './HandChart.tsx'
 import { MadeHandAssistProvider, useMadeHandAssist } from './madeHandAssist.tsx'
 import { ResultBanner } from './ResultBanner.tsx'
 import { Seat } from './Seat.tsx'
@@ -115,6 +116,8 @@ function TableScreenBody({ title }: { title: string }) {
           {rejection}
         </button>
       )}
+
+      {chartOpen && <HandChart onClose={() => setChartOpen(false)} />}
     </div>
   )
 }
