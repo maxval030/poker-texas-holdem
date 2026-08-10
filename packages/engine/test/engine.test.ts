@@ -180,6 +180,10 @@ describe('chip conservation', () => {
 
         expect(stackTotal(state)).toBe(expected)
         expect(state.seats.every((s) => s.stack >= 0)).toBe(true)
+
+        if (state.hand?.reveal && !state.hand.reveal.settled) {
+          state = apply(state, { type: 'timeout-reveal' }, ctx)
+        }
       }
     }
 
