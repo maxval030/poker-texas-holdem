@@ -1,5 +1,6 @@
 import type { Card } from './cards.ts'
 import { rankOf, suitOf } from './cards.ts'
+import type { HandCategory } from './handrank.ts'
 
 /**
  * A slow but obviously correct hand ranker, kept as the yardstick the fast
@@ -9,6 +10,18 @@ import { rankOf, suitOf } from './cards.ts'
 
 const TUPLE_BASE = 13
 const TUPLE_SPAN = TUPLE_BASE ** 5
+
+const CATEGORIES_BY_INDEX: readonly HandCategory[] = [
+  'straight-flush',
+  'four-of-a-kind',
+  'full-house',
+  'flush',
+  'straight',
+  'three-of-a-kind',
+  'two-pair',
+  'one-pair',
+  'high-card',
+]
 
 function tupleValue(parts: readonly number[]): number {
   let value = 0
@@ -53,14 +66,23 @@ export function rank5(cards: readonly Card[]): number {
   return score(8, ranks)
 }
 
-const COMBINATIONS_7_CHOOSE_5: readonly (readonly number[])[] = (() => {
+/** Map a `rank5` score to category (not Cactus `handCategory`). */
+export function categoryFromRank5Score(score: number): HandCategory {
+  return CATEGORIES_BY_INDEX[Math.floor(score / TUPLE_SPAN)] ?? 'high-card'
+}
+
+/** Lexicographic n-choose-5 index tuples (same order as the old 7-choose-5 table). */
+export function combinationsNChoose5(n: number): readonly (readonly number[])[] {
   const out: number[][] = []
-  for (let a = 0; a < 7; a++)
-    for (let b = a + 1; b < 7; b++)
-      for (let c = b + 1; c < 7; c++)
-        for (let d = c + 1; d < 7; d++) for (let e = d + 1; e < 7; e++) out.push([a, b, c, d, e])
+  for (let a = 0; a < n; a++)
+    for (let b = a + 1; b < n; b++)
+      for (let c = b + 1; c < n; c++)
+        for (let d = c + 1; d < n; d++)
+          for (let e = d + 1; e < n; e++) out.push([a, b, c, d, e])
   return out
-})()
+}
+
+const COMBINATIONS_7_CHOOSE_5 = combinationsNChoose5(7)
 
 export function referenceEvaluate7(cards: readonly Card[]): number {
   if (cards.length !== 7) throw new Error(`expected 7 cards, got ${cards.length}`)
