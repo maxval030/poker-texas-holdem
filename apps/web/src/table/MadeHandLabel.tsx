@@ -1,3 +1,4 @@
+import { CARD_ASPECT } from '@holdem/cards'
 import type { HandCategory, MadeHand } from '@holdem/engine'
 import { memo } from 'react'
 import { useLocale } from '../i18n/locale.tsx'
@@ -17,7 +18,9 @@ const CATEGORY_KEY: Record<HandCategory, MessageKey> = {
 }
 
 const SIDE_GAP = 16
-const ABOVE_OFFSET = 72
+/** Matches hero hole-card stack `marginBottom` in `Seat.tsx`. */
+const HERO_CARDS_MARGIN = 12
+const LABEL_ABOVE_GAP = 20
 
 interface MadeHandLabelProps {
   made: MadeHand
@@ -32,10 +35,13 @@ export const MadeHandLabel = memo(function MadeHandLabel({
 }: MadeHandLabelProps) {
   const { t } = useLocale()
   const narrow = layout === PORTRAIT || layout.width <= PORTRAIT.width
+  const badgeTop = box.top - box.height / 2
+  const cardStackTop =
+    badgeTop - HERO_CARDS_MARGIN - layout.heroCardWidth / CARD_ASPECT
   const style = narrow
     ? {
         left: box.left,
-        top: box.top - box.height / 2 - ABOVE_OFFSET,
+        top: cardStackTop - LABEL_ABOVE_GAP,
       }
     : {
         left: box.left + box.width / 2 + SIDE_GAP,
@@ -48,7 +54,7 @@ export const MadeHandLabel = memo(function MadeHandLabel({
       style={{
         ...style,
         fontSize: 28,
-        transform: narrow ? 'translate(-50%, -50%)' : 'translateY(-50%)',
+        transform: narrow ? 'translate(-50%, -100%)' : 'translateY(-50%)',
       }}
       role="status"
     >
