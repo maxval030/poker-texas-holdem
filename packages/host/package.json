@@ -1,0 +1,18 @@
+{
+  "name": "@holdem/host",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@holdem/bot": "workspace:*",
+    "@holdem/engine": "workspace:*",
+    "@holdem/evaluator": "workspace:*",
+    "@holdem/protocol": "workspace:*"
+  }
+}

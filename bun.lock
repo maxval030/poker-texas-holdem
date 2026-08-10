@@ -20,6 +20,7 @@
         "@holdem/bot": "workspace:*",
         "@holdem/engine": "workspace:*",
         "@holdem/evaluator": "workspace:*",
+        "@holdem/host": "workspace:*",
         "@holdem/protocol": "workspace:*",
         "better-auth": "1.6.26",
         "drizzle-orm": "0.45.2",
@@ -40,6 +41,7 @@
         "@holdem/cards": "workspace:*",
         "@holdem/engine": "workspace:*",
         "@holdem/evaluator": "workspace:*",
+        "@holdem/host": "workspace:*",
         "@holdem/protocol": "workspace:*",
         "@tanstack/react-query": "5.101.4",
         "@tanstack/react-router": "1.170.25",
@@ -91,6 +93,16 @@
       },
       "devDependencies": {
         "radashi": "12.9.1",
+      },
+    },
+    "packages/host": {
+      "name": "@holdem/host",
+      "version": "0.1.0",
+      "dependencies": {
+        "@holdem/bot": "workspace:*",
+        "@holdem/engine": "workspace:*",
+        "@holdem/evaluator": "workspace:*",
+        "@holdem/protocol": "workspace:*",
       },
     },
     "packages/protocol": {
@@ -241,6 +253,8 @@
     "@holdem/engine": ["@holdem/engine@workspace:packages/engine"],
 
     "@holdem/evaluator": ["@holdem/evaluator@workspace:packages/evaluator"],
+
+    "@holdem/host": ["@holdem/host@workspace:packages/host"],
 
     "@holdem/protocol": ["@holdem/protocol@workspace:packages/protocol"],
 

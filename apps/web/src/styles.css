@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  --color-felt-900: #0a3d24;
+  --color-felt-800: #0d4a2c;
+  --color-felt-700: #116039;
+  --color-felt-600: #157a49;
+  --color-rail-900: #2a1a10;
+  --color-rail-700: #4a2f1c;
+  --color-rail-500: #6b452a;
+  --color-brass-400: #d9b26a;
+  --color-brass-300: #e8cd94;
+  --color-cream: #f4ecd8;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-felt-900);
+  color: var(--color-cream);
+  font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  /* A poker table is a fixed board, not a document: nothing should rubber band. */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * The action clock is a single compositor-friendly transform driven by the
+ * server's deadline through `animation-delay`, so it stays honest across a
+ * reload and never costs a React render per second.
+ */
+@keyframes clock-drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes seat-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 205, 148, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(232, 205, 148, 0);
+  }
+}
+
+@keyframes emote-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.95);
+  }
+}
+
+/*
+ * The clock keeps animating: it is the only thing telling a player how long they
+ * have left, so freezing it would hide information rather than reduce motion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.motion-essential),
+  *:not(.motion-essential)::before,
+  *:not(.motion-essential)::after {
+    /* biome-ignore-start lint/complexity/noImportantStyles: a motion override has to
+       beat every animation declared anywhere, which is what !important is for. */
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    /* biome-ignore-end lint/complexity/noImportantStyles: see above. */
+  }
+}

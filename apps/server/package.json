@@ -18,6 +18,7 @@
     "@holdem/bot": "workspace:*",
     "@holdem/engine": "workspace:*",
     "@holdem/evaluator": "workspace:*",
+    "@holdem/host": "workspace:*",
     "@holdem/protocol": "workspace:*",
     "better-auth": "1.6.26",
     "drizzle-orm": "0.45.2",
