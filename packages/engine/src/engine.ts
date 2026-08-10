@@ -264,6 +264,7 @@ function startHand(state: TableState, ctx: EngineContext, events: GameEvent[]): 
     collected: 0,
     deadline: null,
     complete: false,
+    reveal: null,
   }
 
   state.hand = hand

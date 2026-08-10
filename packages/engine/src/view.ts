@@ -67,6 +67,7 @@ export function viewFor(state: TableState, viewerSeat: number | null): TableStat
       collected: hand.collected,
       deadline: hand.deadline,
       complete: hand.complete,
+      reveal: hand.reveal,
       pots,
       potTotal,
     },
