@@ -1,4 +1,4 @@
-import { REVEAL_WINDOW_MS, type HandCategory } from '@holdem/engine'
+import { type HandCategory, REVEAL_WINDOW_MS } from '@holdem/engine'
 import { memo } from 'react'
 import { useLocale } from '../i18n/locale.tsx'
 import type { MessageKey } from '../i18n/messages.ts'

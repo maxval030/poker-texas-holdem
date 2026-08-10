@@ -59,9 +59,7 @@ function foldWinWithPendingReveal(h: Harness): { winnerSeat: number; winnerId: s
 
   expect(h.host.tableState.hand?.complete).toBe(true)
   expect(h.host.tableState.hand?.reveal?.settled).toBe(false)
-  expect(h.host.tableState.hand?.reveal?.choices).toEqual([
-    { seat: winnerSeat, choice: 'pending' },
-  ])
+  expect(h.host.tableState.hand?.reveal?.choices).toEqual([{ seat: winnerSeat, choice: 'pending' }])
 
   return { winnerSeat, winnerId }
 }
@@ -88,9 +86,9 @@ describe('reveal scheduling', () => {
 
     h.host.receive(winnerId, { type: 'leave' })
 
-    expect(
-      h.host.tableState.hand?.reveal?.choices.find((c) => c.seat === winnerSeat)?.choice,
-    ).toBe('mucked')
+    expect(h.host.tableState.hand?.reveal?.choices.find((c) => c.seat === winnerSeat)?.choice).toBe(
+      'mucked',
+    )
     expect(h.host.tableState.hand?.reveal?.settled).toBe(true)
   })
 })

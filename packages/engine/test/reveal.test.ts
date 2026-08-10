@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { createTable, reduce } from '../src/engine.ts'
-import { chipDeltas, allRevealDecided, REVEAL_WINDOW_MS } from '../src/result.ts'
+import { allRevealDecided, chipDeltas, REVEAL_WINDOW_MS } from '../src/result.ts'
 import type { Occupant, TableState } from '../src/types.ts'
 import { viewFor } from '../src/view.ts'
 import { apply, applyWithEvents, seatPlayers, testConfig, testContext } from './helpers.ts'

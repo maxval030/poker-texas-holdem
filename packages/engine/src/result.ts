@@ -36,7 +36,5 @@ export function eligibleRevealSeats(state: TableState): number[] {
     return isEligibleHumanSeat(state, seat) ? [seat] : []
   }
 
-  return contesting
-    .map((player) => player.seat)
-    .filter((seat) => isEligibleHumanSeat(state, seat))
+  return contesting.map((player) => player.seat).filter((seat) => isEligibleHumanSeat(state, seat))
 }

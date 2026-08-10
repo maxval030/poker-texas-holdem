@@ -1,5 +1,5 @@
 import type { Card } from './cards.ts'
-import { handCategory, type HandCategory } from './handrank.ts'
+import { type HandCategory, handCategory } from './handrank.ts'
 import { buildPots } from './pots.ts'
 import { chipDeltas } from './result.ts'
 import type { GameEvent, HandPlayer, HandState, Pot, Seat, TableState } from './types.ts'
