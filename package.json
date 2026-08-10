@@ -14,8 +14,16 @@
     "cards:build": "bun run --cwd packages/cards build",
     "dev:server": "bun run --cwd apps/server dev",
     "dev:web": "bun run --cwd apps/web dev",
-    "infra:up": "docker compose up -d",
-    "infra:down": "docker compose down"
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "podman:up": "podman compose up --build -d",
+    "podman:down": "podman compose down",
+    "podman:logs": "podman compose logs -f",
+    "infra:up": "docker compose up -d postgres valkey",
+    "infra:down": "docker compose down",
+    "infra:podman:up": "podman compose up -d postgres valkey",
+    "infra:podman:down": "podman compose down"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",

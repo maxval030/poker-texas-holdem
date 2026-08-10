@@ -10,9 +10,47 @@
 
 ## ความต้องการของระบบ
 
-- [Bun](https://bun.sh) **1.3.14+**
-- Docker หรือ Podman (สำหรับ Postgres + Valkey ตอนเล่นออนไลน์)
-- Node ไม่จำเป็น — ใช้ Bun ทั้ง repo
+- Docker หรือ Podman (ทางลัดด้านล่าง)
+- หรือ [Bun](https://bun.sh) **1.3.14+** ถ้าจะรันแบบ local โดยไม่ containerize ทั้งก้อน
+
+## รันทั้งก้อนด้วยคำสั่งเดียว
+
+ไฟล์ `docker-compose.yml` ใช้ได้ทั้ง Docker และ Podman
+
+**เครื่อง local ที่ใช้ Podman (เช่น CachyOS ที่ไม่มี Docker socket):**
+
+```bash
+cd texas-holdem
+bun run podman:up
+# เทียบเท่า: podman compose up --build -d
+```
+
+**Docker (เช่น production / CI):**
+
+```bash
+bun run docker:up
+# เทียบเท่า: docker compose up --build -d
+```
+
+เปิด [http://localhost:3000](http://localhost:3000)
+
+Compose จะสร้างและรัน:
+
+| บริการ | พอร์ต | หน้าที่ |
+| --- | --- | --- |
+| `web` | 3000 | UI (TanStack Start) |
+| `server` | 3001 | API + WebSocket (migrate ให้เองตอนสตาร์ท) |
+| `postgres` | 5432 | ฐานข้อมูล |
+| `valkey` | 6379 | lock / pub-sub / ticket |
+
+หยุด / ดู log:
+
+| | Podman | Docker |
+| --- | --- | --- |
+| หยุด | `bun run podman:down` | `bun run docker:down` |
+| log | `bun run podman:logs` | `bun run docker:logs` |
+
+ตั้ง `BETTER_AUTH_SECRET` ใน `.env` ก่อนขึ้นของจริง (ค่า default ใน compose เป็นของ dev เท่านั้น)
 
 ## โครงสร้างสั้นๆ
 
@@ -26,7 +64,7 @@ packages/cards  SVG ไพ่
 packages/protocol  ข้อความ client ↔ server
 ```
 
-## ติดตั้งครั้งแรก
+## รันแบบ local (Bun บนเครื่อง)
 
 ```bash
 cd texas-holdem
@@ -34,13 +72,9 @@ bun install
 cp .env.example .env
 ```
 
-ค่าใน `.env` ค่าเริ่มต้นใช้กับ docker-compose ได้เลย เปลี่ยน `BETTER_AUTH_SECRET` ก่อนขึ้น production
-
 OAuth (Google / GitHub / Discord) เป็นทางเลือก — เว้นว่างไว้ได้ เกมยังเข้าแบบ anonymous guest ได้
 
-## เล่นคนเดียว (ไม่ต้อง infra)
-
-Solo ไม่แตะ Postgres / Valkey / server
+### เล่นคนเดียว (ไม่ต้อง infra)
 
 ```bash
 bun run dev:web
@@ -48,54 +82,26 @@ bun run dev:web
 
 เปิด [http://localhost:3000](http://localhost:3000) แล้วเลือก **Play against bots** / **เล่นกับบอท**
 
-## เล่นออนไลน์ (เต็มชุด)
-
-เปิดเทอร์มินัล 3 อัน (หรือใช้ tmux)
-
-**1) Infra**
+### เล่นออนไลน์แบบ hot-reload
 
 ```bash
-bun run infra:up
-# เทียบเท่า: docker compose up -d
-# บนเครื่องนี้ถ้าไม่มี Docker socket ใช้: podman compose up -d
-```
-
-รอ Postgres (`5432`) กับ Valkey (`6379`) พร้อม
-
-**2) Migrate + server**
-
-```bash
+bun run infra:podman:up   # แค่ Postgres + Valkey (Podman)
+# หรือ: bun run infra:up   # ถ้าใช้ Docker
 bun run --cwd apps/server db:migrate
-bun run dev:server
+bun run dev:server        # :3001
+bun run dev:web           # :3000
 ```
 
-Server ฟังที่ [http://localhost:3001](http://localhost:3001)
-
-**3) Web**
-
-```bash
-bun run dev:web
-```
-
-แล้วที่ [http://localhost:3000](http://localhost:3000):
-
-1. **Create a private table** — ได้รหัสเชิญ
-2. ส่งรหัสให้เพื่อน → **Join with a code**
-3. นั่งที่นั่ง เพิ่มบอทได้ แล้วกด **Deal**
-
-Guest จะถูกสร้างอัตโนมัติตอนเข้าห้อง (ไม่ต้องล็อกอิน OAuth)
-
-หยุด infra:
-
-```bash
-bun run infra:down
-```
+แล้วที่เว็บ: สร้างห้อง → ส่งรหัส → นั่ง → เพิ่มบอท → **Deal**
 
 ## สคริปต์ที่ใช้บ่อย
 
 | คำสั่ง | ความหมาย |
 | --- | --- |
-| `bun run infra:up` / `infra:down` | เปิด/ปิด Postgres + Valkey |
+| `bun run podman:up` / `podman:down` / `podman:logs` | ทั้งก้อนด้วย Podman (local) |
+| `bun run docker:up` / `docker:down` / `docker:logs` | ทั้งก้อนด้วย Docker (prod/CI) |
+| `bun run infra:podman:up` / `infra:podman:down` | แค่ Postgres + Valkey (Podman) |
+| `bun run infra:up` / `infra:down` | แค่ Postgres + Valkey (Docker) |
 | `bun run dev:server` | Elysia แบบ watch ที่พอร์ต 3001 |
 | `bun run dev:web` | UI ที่พอร์ต 3000 |
 | `bun run --cwd apps/server db:migrate` | รัน migration |

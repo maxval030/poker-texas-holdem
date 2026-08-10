@@ -45,7 +45,11 @@ const app = new Elysia()
   .use(roomRoutes)
   .use(ticketRoutes)
   .use(tableWs)
-  .listen(env.serverPort)
+  .listen({
+    port: env.serverPort,
+    // Bind on all interfaces so the container port mapping works.
+    hostname: '0.0.0.0',
+  })
 
 console.info(`holdem server listening on http://localhost:${app.server?.port}`)
 

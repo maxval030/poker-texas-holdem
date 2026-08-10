@@ -30,5 +30,48 @@ services:
       timeout: 3s
       retries: 20
 
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://holdem:holdem@postgres:5432/holdem
+      VALKEY_URL: redis://valkey:6379
+      SERVER_PORT: '3001'
+      WEB_ORIGIN: http://localhost:3000
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-docker-dev-change-me-to-a-long-random-string}
+      BETTER_AUTH_URL: http://localhost:3001
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+      args:
+        VITE_API_URL: http://localhost:3001
+        VITE_WS_URL: ws://localhost:3001
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+
 volumes:
   postgres-data:
