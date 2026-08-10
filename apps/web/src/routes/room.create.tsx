@@ -1,7 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createRoom } from '../api/rooms.ts'
-import { ensureSignedIn } from '../auth/client.ts'
+import { authClient } from '../auth/client.ts'
+import {
+  DISPLAY_NAME_MAX_BASE,
+  displayNameErrorKey,
+  hasUsableDisplayName,
+} from '../auth/displayName.ts'
+import { ensureNamedPlayer } from '../auth/ensureNamedPlayer.ts'
 import { LanguageSwitch, useLocale } from '../i18n/locale.tsx'
 
 export const Route = createFileRoute('/room/create')({
@@ -13,6 +19,7 @@ function CreateRoomPage() {
   const navigate = useNavigate()
   const { t } = useLocale()
   const [name, setName] = useState('')
+  const [namedAlready, setNamedAlready] = useState(false)
   const [smallBlind, setSmallBlind] = useState(25)
   const [actionClockMs, setActionClockMs] = useState<15_000 | 20_000 | 30_000 | 60_000>(30_000)
   const [busy, setBusy] = useState(false)
@@ -22,12 +29,30 @@ function CreateRoomPage() {
   const minBuyIn = bigBlind * 40
   const maxBuyIn = bigBlind * 200
 
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const session = await authClient.getSession()
+      if (!cancelled && hasUsableDisplayName(session.data?.user?.name)) {
+        setNamedAlready(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      await ensureSignedIn(name || 'Host')
+      const named = await ensureNamedPlayer(name)
+      if (!named.ok) {
+        setError(t(displayNameErrorKey(named.reason)))
+        setBusy(false)
+        return
+      }
       const room = await createRoom({
         smallBlind,
         bigBlind,
@@ -58,16 +83,21 @@ function CreateRoomPage() {
       </header>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="text-cream/80">{t('create.name')}</span>
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="rounded-lg border border-brass-400/30 bg-black/30 px-3 py-2 text-cream"
-            placeholder="Guest"
-            maxLength={24}
-          />
-        </label>
+        {!namedAlready && (
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="text-cream/80">{t('create.name')}</span>
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="rounded-lg border border-brass-400/30 bg-black/30 px-3 py-2 text-cream"
+              placeholder={t('name.placeholder')}
+              maxLength={DISPLAY_NAME_MAX_BASE}
+              required
+              minLength={3}
+            />
+            <span className="text-xs text-cream/50">{t('name.hint')}</span>
+          </label>
+        )}
 
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-cream/80">{t('create.smallBlind')}</span>

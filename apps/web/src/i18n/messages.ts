@@ -19,8 +19,16 @@ export type MessageKey =
   | 'join.subtitle'
   | 'join.name'
   | 'join.code'
+  | 'join.codeError'
   | 'join.submit'
   | 'join.joining'
+  | 'name.tooShort'
+  | 'name.tooLong'
+  | 'name.placeholder'
+  | 'name.hint'
+  | 'name.gateTitle'
+  | 'name.gateSubtitle'
+  | 'name.continue'
   | 'table.blinds'
   | 'table.pot'
   | 'table.sit'
@@ -102,8 +110,16 @@ const en = {
   'join.subtitle': 'Enter the code a friend sent you.',
   'join.name': 'Display name',
   'join.code': 'Invite code',
+  'join.codeError': 'Enter the invite code',
   'join.submit': 'Join table',
   'join.joining': 'Joining…',
+  'name.tooShort': 'Name must be at least 3 characters',
+  'name.tooLong': 'Name must be at most 20 characters',
+  'name.placeholder': 'Your name',
+  'name.hint': 'A short random tag is added so names stay unique',
+  'name.gateTitle': 'Choose a display name',
+  'name.gateSubtitle': 'Before you join room {code}',
+  'name.continue': 'Continue to table',
   'table.blinds': 'Blinds {sb} / {bb}',
   'table.pot': 'Pot {amount}',
   'table.sit': 'Sit here',
@@ -186,8 +202,16 @@ const th: Record<MessageKey, string> = {
   'join.subtitle': 'ใส่รหัสที่เพื่อนส่งมา',
   'join.name': 'ชื่อที่แสดง',
   'join.code': 'รหัสเชิญ',
+  'join.codeError': 'ใส่รหัสเชิญ',
   'join.submit': 'เข้าโต๊ะ',
   'join.joining': 'กำลังเข้า…',
+  'name.tooShort': 'ชื่อต้องมีอย่างน้อย 3 ตัวอักษร',
+  'name.tooLong': 'ชื่อยาวได้ไม่เกิน 20 ตัวอักษร',
+  'name.placeholder': 'ชื่อของคุณ',
+  'name.hint': 'ระบบจะเติมแท็กสั้น ๆ ท้ายชื่อให้อัตโนมัติ',
+  'name.gateTitle': 'ตั้งชื่อที่แสดง',
+  'name.gateSubtitle': 'ก่อนเข้าห้อง {code}',
+  'name.continue': 'ไปที่โต๊ะ',
   'table.blinds': 'บลายด์ {sb} / {bb}',
   'table.pot': 'พอต {amount}',
   'table.sit': 'นั่งที่นี่',

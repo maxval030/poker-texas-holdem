@@ -1,8 +1,14 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { fetchRoomByCode, type PublicRoom } from '../api/rooms.ts'
-import { ensureSignedIn } from '../auth/client.ts'
-import { useLocale } from '../i18n/locale.tsx'
+import { authClient } from '../auth/client.ts'
+import {
+  DISPLAY_NAME_MAX_BASE,
+  displayNameErrorKey,
+  hasUsableDisplayName,
+} from '../auth/displayName.ts'
+import { ensureNamedPlayer } from '../auth/ensureNamedPlayer.ts'
+import { LanguageSwitch, useLocale } from '../i18n/locale.tsx'
 import { createOnlineTransport } from '../online/transport.ts'
 import { chips } from '../table/format.ts'
 import { useTableStore } from '../table/store.ts'
@@ -13,23 +19,39 @@ export const Route = createFileRoute('/room/$code')({
   ssr: false,
 })
 
+type Phase = 'checking' | 'need-name' | 'loading' | 'ready' | 'error'
+
 function RoomPage() {
   const { code } = Route.useParams()
+  const { t } = useLocale()
+  const [phase, setPhase] = useState<Phase>('checking')
   const [room, setRoom] = useState<PublicRoom | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [ready, setReady] = useState(false)
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        await ensureSignedIn()
+        const session = await authClient.getSession()
+        if (cancelled) return
+        if (!hasUsableDisplayName(session.data?.user?.name)) {
+          setPhase('need-name')
+          return
+        }
+        await ensureNamedPlayer('')
+        if (cancelled) return
+        setPhase('loading')
         const found = await fetchRoomByCode(code)
         if (cancelled) return
         setRoom(found)
-        setReady(true)
+        setPhase('ready')
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'room unavailable')
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'room unavailable')
+          setPhase('error')
+        }
       }
     })()
     return () => {
@@ -37,7 +59,29 @@ function RoomPage() {
     }
   }, [code])
 
-  if (error) {
+  const onNameSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      const named = await ensureNamedPlayer(name)
+      if (!named.ok) {
+        setError(t(displayNameErrorKey(named.reason)))
+        return
+      }
+      setPhase('loading')
+      const found = await fetchRoomByCode(code)
+      setRoom(found)
+      setPhase('ready')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'room unavailable')
+      setPhase('error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (phase === 'error') {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 px-6">
         <p className="rounded-lg bg-[#7a2f2f] px-4 py-3 text-cream">{error}</p>
@@ -48,7 +92,49 @@ function RoomPage() {
     )
   }
 
-  if (!room || !ready) {
+  if (phase === 'need-name') {
+    return (
+      <main className="relative mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 py-12">
+        <div
+          className="absolute right-4 top-4"
+          style={{ top: 'max(1rem, env(safe-area-inset-top))' }}
+        >
+          <LanguageSwitch />
+        </div>
+        <header className="text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-brass-300">
+            {t('name.gateTitle')}
+          </h1>
+          <p className="mt-2 text-sm text-cream/70">{t('name.gateSubtitle', { code })}</p>
+        </header>
+        <form onSubmit={onNameSubmit} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="text-cream/80">{t('join.name')}</span>
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="rounded-lg border border-brass-400/30 bg-black/30 px-3 py-2 text-cream"
+              placeholder={t('name.placeholder')}
+              maxLength={DISPLAY_NAME_MAX_BASE}
+              required
+              minLength={3}
+            />
+            <span className="text-xs text-cream/50">{t('name.hint')}</span>
+          </label>
+          {error && <p className="rounded-lg bg-[#7a2f2f] px-3 py-2 text-sm text-cream">{error}</p>}
+          <button
+            type="submit"
+            disabled={busy}
+            className="rounded-xl bg-felt-600 px-5 py-4 font-semibold text-cream shadow-md disabled:opacity-50"
+          >
+            {busy ? t('join.joining') : t('name.continue')}
+          </button>
+        </form>
+      </main>
+    )
+  }
+
+  if (phase !== 'ready' || !room) {
     return <main className="grid min-h-dvh place-items-center text-cream/70">Opening room…</main>
   }
 
