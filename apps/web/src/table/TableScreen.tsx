@@ -9,6 +9,7 @@ import { ChipFX } from './ChipFX.tsx'
 import { EMOTE_LABEL_KEY, EMOTE_MARK } from './emotes.tsx'
 import { Felt } from './Felt.tsx'
 import { chips } from './format.ts'
+import { useMadeHandAssist } from './madeHandAssist.tsx'
 import { ResultBanner } from './ResultBanner.tsx'
 import { Seat } from './Seat.tsx'
 import { Stage } from './Stage.tsx'
@@ -23,6 +24,8 @@ export function TableScreen({ title }: { title: string }) {
   const rejection = useTableStore((state) => state.rejection)
   const dismissRejection = useTableStore((state) => state.dismissRejection)
   const { t } = useLocale()
+  const { enabled: assistEnabled, setEnabled: setAssistEnabled } = useMadeHandAssist()
+  const [chartOpen, setChartOpen] = useState(false)
 
   useEffect(() => {
     ensureCourtSprite().catch(() => {
@@ -53,6 +56,30 @@ export function TableScreen({ title }: { title: string }) {
           </span>
         )}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAssistEnabled(!assistEnabled)}
+            className="rounded px-2 py-1 tracking-wide"
+            style={{
+              background: assistEnabled ? 'rgba(232,205,148,.22)' : 'transparent',
+              color: assistEnabled ? 'var(--color-brass-300)' : 'rgba(244,236,216,.45)',
+            }}
+            aria-pressed={assistEnabled}
+          >
+            {t('assist.madeHand')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setChartOpen((open) => !open)}
+            className="rounded px-2 py-1 tracking-wide"
+            style={{
+              background: chartOpen ? 'rgba(232,205,148,.22)' : 'transparent',
+              color: chartOpen ? 'var(--color-brass-300)' : 'rgba(244,236,216,.45)',
+            }}
+            aria-pressed={chartOpen}
+          >
+            {t('assist.handChart')}
+          </button>
           <LanguageSwitch />
           <ConnectionDot status={status} />
         </div>
