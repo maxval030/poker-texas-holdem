@@ -9,7 +9,7 @@ import { ChipFX } from './ChipFX.tsx'
 import { EMOTE_LABEL_KEY, EMOTE_MARK } from './emotes.tsx'
 import { Felt } from './Felt.tsx'
 import { chips } from './format.ts'
-import { useMadeHandAssist } from './madeHandAssist.tsx'
+import { MadeHandAssistProvider, useMadeHandAssist } from './madeHandAssist.tsx'
 import { ResultBanner } from './ResultBanner.tsx'
 import { Seat } from './Seat.tsx'
 import { Stage } from './Stage.tsx'
@@ -18,6 +18,14 @@ import { useTableStore } from './store.ts'
 const SEAT_INDICES = Array.from({ length: MAX_SEATS }, (_, index) => index)
 
 export function TableScreen({ title }: { title: string }) {
+  return (
+    <MadeHandAssistProvider>
+      <TableScreenBody title={title} />
+    </MadeHandAssistProvider>
+  )
+}
+
+function TableScreenBody({ title }: { title: string }) {
   const send = useTableStore((state) => state.send)
   const config = useTableStore((state) => state.view?.config ?? null)
   const status = useTableStore((state) => state.status)

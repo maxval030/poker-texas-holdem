@@ -1,6 +1,21 @@
-import { useCallback, useEffect, useState } from 'react'
+import {
+  createContext,
+  type ReactNode,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 
 const STORAGE_KEY = 'holdem.madeHandAssist'
+
+interface MadeHandAssistContextValue {
+  enabled: boolean
+  setEnabled(next: boolean): void
+}
+
+const MadeHandAssistContext = createContext<MadeHandAssistContextValue | null>(null)
 
 function readStored(): boolean {
   if (typeof window === 'undefined') return true
@@ -9,10 +24,7 @@ function readStored(): boolean {
   return v !== '0'
 }
 
-export function useMadeHandAssist(): {
-  enabled: boolean
-  setEnabled(next: boolean): void
-} {
+export function MadeHandAssistProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabledState] = useState(true)
 
   useEffect(() => {
@@ -24,5 +36,13 @@ export function useMadeHandAssist(): {
     window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
   }, [])
 
-  return { enabled, setEnabled }
+  const value = useMemo(() => ({ enabled, setEnabled }), [enabled, setEnabled])
+
+  return <MadeHandAssistContext value={value}>{children}</MadeHandAssistContext>
+}
+
+export function useMadeHandAssist(): MadeHandAssistContextValue {
+  const value = use(MadeHandAssistContext)
+  if (!value) throw new Error('useMadeHandAssist must be used within MadeHandAssistProvider')
+  return value
 }
