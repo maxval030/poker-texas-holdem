@@ -3,6 +3,9 @@ import { useShallow } from 'zustand/react/shallow'
 import { useMadeHandAssist } from './madeHandAssist.tsx'
 import { useTableStore } from './store.ts'
 
+/** Stable empty board for useShallow — a fresh `[]` each select causes React #185. */
+const NO_BOARD: Card[] = []
+
 export function resolveHeroMadeHand(input: {
   assistEnabled: boolean
   hole: readonly Card[] | null | undefined
@@ -34,7 +37,7 @@ export function useHeroMadeHand(): {
           : (hand?.players.find((entry) => entry.seat === viewerSeat) ?? null)
       return {
         hole: player?.holeCards ?? null,
-        board: hand?.board ?? [],
+        board: hand?.board ?? NO_BOARD,
         folded: player?.status === 'folded',
         complete: hand?.complete ?? false,
       }
