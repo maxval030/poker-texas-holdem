@@ -137,6 +137,7 @@ export class TableHost {
     const seat = this.seatOf(userId)
     this.members.delete(userId)
     if (seat !== null) {
+      this.muckIfPendingReveal(seat)
       this.dispatch(userId, { type: 'set-connected', seat, connected: false })
       this.scheduleGrace(seat)
       const chair = this.state.seats[seat]
@@ -196,7 +197,22 @@ export class TableHost {
       case 'leave': {
         const seat = this.requireSeat(userId)
         if (seat === null) return
+        this.muckIfPendingReveal(seat)
         this.dispatch(userId, { type: 'leave', seat })
+        return
+      }
+
+      case 'show': {
+        const seat = this.requireSeat(userId)
+        if (seat === null) return
+        this.dispatch(userId, { type: 'show', seat })
+        return
+      }
+
+      case 'muck': {
+        const seat = this.requireSeat(userId)
+        if (seat === null) return
+        this.dispatch(userId, { type: 'muck', seat })
         return
       }
 
@@ -427,6 +443,19 @@ export class TableHost {
     const hand = this.state.hand
     if (!hand || hand.complete) {
       this.reclaimSeats()
+      if (hand?.reveal && !hand.reveal.settled) {
+        if (hand.reveal.deadline !== null) {
+          const handNumber = hand.handNumber
+          this.cancelPending = this.clock.schedule(() => {
+            this.cancelPending = null
+            const current = this.state.hand
+            if (current?.handNumber !== handNumber) return
+            if (!current.reveal || current.reveal.settled) return
+            this.dispatch(null, { type: 'timeout-reveal' })
+          }, hand.reveal.deadline - this.clock.now())
+        }
+        return
+      }
       this.scheduleNextHand()
       return
     }
@@ -471,6 +500,7 @@ export class TableHost {
   }
 
   private scheduleNextHand(): void {
+    if (this.state.hand?.reveal && !this.state.hand.reveal.settled) return
     const interval = this.options.handIntervalMs
     if (interval === null || interval === undefined) return
     if (this.eligibleCount() < 2) return
@@ -480,9 +510,18 @@ export class TableHost {
       this.cancelPending = null
       if (this.state.handNumber !== handNumber) return
       if (this.state.hand && !this.state.hand.complete) return
+      if (this.state.hand?.reveal && !this.state.hand.reveal.settled) return
       if (this.eligibleCount() < 2) return
       this.dispatch(null, { type: 'start-hand' })
     }, interval)
+  }
+
+  private muckIfPendingReveal(seat: number): void {
+    const reveal = this.state.hand?.reveal
+    if (!reveal || reveal.settled) return
+    const entry = reveal.choices.find((choice) => choice.seat === seat)
+    if (entry?.choice !== 'pending') return
+    this.dispatch(null, { type: 'muck', seat })
   }
 
   private eligibleCount(): number {

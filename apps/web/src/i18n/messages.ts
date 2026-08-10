@@ -55,6 +55,20 @@ export type MessageKey =
   | 'emote.thinking'
   | 'emote.chips'
   | 'emote.oops'
+  | 'result.winner'
+  | 'result.splitWinners'
+  | 'result.youWin'
+  | 'result.show'
+  | 'result.muck'
+  | 'hand.straightFlush'
+  | 'hand.fourOfAKind'
+  | 'hand.fullHouse'
+  | 'hand.flush'
+  | 'hand.straight'
+  | 'hand.threeOfAKind'
+  | 'hand.twoPair'
+  | 'hand.onePair'
+  | 'hand.highCard'
   | 'seconds'
 
 const en = {
@@ -112,6 +126,20 @@ const en = {
   'emote.thinking': 'Thinking',
   'emote.chips': 'Chips',
   'emote.oops': 'Oops',
+  'result.winner': '{name} wins',
+  'result.splitWinners': '{names} split',
+  'result.youWin': 'You win',
+  'result.show': 'Show',
+  'result.muck': 'Muck',
+  'hand.straightFlush': 'Straight flush',
+  'hand.fourOfAKind': 'Four of a kind',
+  'hand.fullHouse': 'Full house',
+  'hand.flush': 'Flush',
+  'hand.straight': 'Straight',
+  'hand.threeOfAKind': 'Three of a kind',
+  'hand.twoPair': 'Two pair',
+  'hand.onePair': 'One pair',
+  'hand.highCard': 'High card',
   seconds: '{n} seconds',
 } as const satisfies Record<MessageKey, string>
 
@@ -170,6 +198,20 @@ const th: Record<MessageKey, string> = {
   'emote.thinking': 'คิดอยู่',
   'emote.chips': 'ชิป',
   'emote.oops': 'อุ๊ย',
+  'result.winner': '{name} ชนะ',
+  'result.splitWinners': '{names} แบ่งพอต',
+  'result.youWin': 'คุณชนะ',
+  'result.show': 'โชว์',
+  'result.muck': 'ไม่โชว์',
+  'hand.straightFlush': 'สเตรทฟลัช',
+  'hand.fourOfAKind': 'โฟร์ออฟอะไคนด์',
+  'hand.fullHouse': 'ฟูลเฮาส์',
+  'hand.flush': 'ฟลัช',
+  'hand.straight': 'สเตรท',
+  'hand.threeOfAKind': 'ทรีออฟอะไคนด์',
+  'hand.twoPair': 'ทูแพร์',
+  'hand.onePair': 'วันแพร์',
+  'hand.highCard': 'ไฮการ์ด',
   seconds: '{n} วินาที',
 }
 

@@ -9,6 +9,7 @@ import {
 import type { Card } from './cards.ts'
 import { freshDeck } from './cards.ts'
 import { buildPots, orderFromButton, scoreShowdown, settlePots } from './pots.ts'
+import { allRevealDecided, eligibleRevealSeats, REVEAL_WINDOW_MS } from './result.ts'
 import { shuffleInPlace } from './rng.ts'
 import type {
   Command,
@@ -127,6 +128,15 @@ function dispatch(
       state.status = state.hand && !state.hand.complete ? 'running' : 'waiting'
       events.push({ type: 'table-status', status: state.status })
       return
+    case 'show':
+      decideReveal(state, command.seat, 'shown', events, ctx)
+      return
+    case 'muck':
+      decideReveal(state, command.seat, 'mucked', events)
+      return
+    case 'timeout-reveal':
+      timeoutReveal(state, events)
+      return
   }
 }
 
@@ -216,6 +226,9 @@ function eligibleSeatsForHand(state: TableState): number[] {
 
 function startHand(state: TableState, ctx: EngineContext, events: GameEvent[]): void {
   if (state.hand && !state.hand.complete) fail('a hand is already in progress')
+  if (state.hand?.reveal && !state.hand.reveal.settled) {
+    fail('previous reveal is still unsettled')
+  }
   const eligible = eligibleSeatsForHand(state)
   if (eligible.length < 2) fail('need at least two funded players to start a hand')
 
@@ -264,6 +277,7 @@ function startHand(state: TableState, ctx: EngineContext, events: GameEvent[]): 
     collected: 0,
     deadline: null,
     complete: false,
+    reveal: null,
   }
 
   state.hand = hand
@@ -584,6 +598,22 @@ function endHand(state: TableState, ctx: EngineContext, events: GameEvent[]): vo
   hand.actorSeat = null
   hand.deadline = null
 
+  const humanSeats = eligibleRevealSeats(state)
+  const choices = humanSeats.map((seat) => ({ seat, choice: 'pending' as const }))
+
+  hand.reveal = {
+    deadline: humanSeats.length > 0 ? ctx.now + REVEAL_WINDOW_MS : null,
+    settled: humanSeats.length === 0,
+    choices,
+    awards,
+  }
+  events.push({
+    type: 'reveal-started',
+    deadline: hand.reveal.deadline,
+    seats: humanSeats,
+  })
+  if (hand.reveal.settled) events.push({ type: 'reveal-settled' })
+
   for (const seat of state.seats) {
     if (!seat.occupant) continue
     if (seat.stack === 0 && seat.status === 'waiting') seat.status = 'busted'
@@ -594,6 +624,52 @@ function endHand(state: TableState, ctx: EngineContext, events: GameEvent[]): vo
     type: 'hand-ended',
     stacks: state.seats.filter((s) => s.occupant).map((s) => ({ seat: s.index, stack: s.stack })),
   })
+}
+
+function decideReveal(
+  state: TableState,
+  seat: number,
+  choice: 'shown' | 'mucked',
+  events: GameEvent[],
+  ctx?: EngineContext,
+): void {
+  const hand = state.hand
+  const reveal = hand?.reveal
+  if (!hand || !reveal || reveal.settled) fail('no reveal in progress')
+  const entry = reveal.choices.find((c) => c.seat === seat)
+  if (!entry) fail(`seat ${seat} is not eligible to reveal`)
+  if (entry.choice !== 'pending') fail(`seat ${seat} has already decided`)
+
+  entry.choice = choice
+  events.push(choice === 'shown' ? { type: 'player-shown', seat } : { type: 'player-mucked', seat })
+
+  if (choice === 'shown' && ctx) {
+    while (hand.board.length < 5) {
+      hand.board.push(hand.deck.pop() as Card)
+    }
+    const player = hand.players.find((p) => p.seat === seat)
+    if (player) {
+      entry.score = ctx.evaluate7([...player.holeCards, ...hand.board])
+    }
+  }
+
+  if (allRevealDecided(reveal)) {
+    reveal.settled = true
+    events.push({ type: 'reveal-settled' })
+  }
+}
+
+function timeoutReveal(state: TableState, events: GameEvent[]): void {
+  const reveal = state.hand?.reveal
+  if (!reveal || reveal.settled) fail('no reveal in progress')
+
+  for (const entry of reveal.choices) {
+    if (entry.choice !== 'pending') continue
+    entry.choice = 'mucked'
+    events.push({ type: 'player-mucked', seat: entry.seat })
+  }
+  reveal.settled = true
+  events.push({ type: 'reveal-settled' })
 }
 
 export function chipsOnTable(state: TableState): number {

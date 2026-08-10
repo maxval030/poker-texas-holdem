@@ -75,6 +75,21 @@ export interface Pot {
   eligibleSeats: number[]
 }
 
+export type RevealChoice = 'pending' | 'shown' | 'mucked'
+
+export interface RevealAward {
+  seat: number
+  amount: number
+  potIndex: number
+}
+
+export interface RevealState {
+  deadline: number | null
+  settled: boolean
+  choices: { seat: number; choice: RevealChoice; score?: number }[]
+  awards: RevealAward[]
+}
+
 export interface HandState {
   handNumber: number
   buttonSeat: number
@@ -95,6 +110,8 @@ export interface HandState {
   collected: number
   deadline: number | null
   complete: boolean
+  /** Null while the hand is in progress; populated when the hand ends. */
+  reveal: RevealState | null
 }
 
 export type TableStatus = 'waiting' | 'running' | 'dormant'
@@ -142,11 +159,23 @@ export type Command =
   | { type: 'release-seat'; seat: number }
   | { type: 'pause' }
   | { type: 'resume' }
+  | { type: 'show'; seat: number }
+  | { type: 'muck'; seat: number }
+  | { type: 'timeout-reveal' }
 
 export interface HandResultEntry {
   seat: number
   amount: number
   potIndex: number
+}
+
+/** Engine-side hand result row; `name` is filled in by the view layer. */
+export interface HandResultEntryView {
+  seat: number
+  name?: never
+  delta: number
+  awarded: number
+  committed: number
 }
 
 export interface ShowdownReveal {
@@ -179,6 +208,10 @@ export type GameEvent =
   | { type: 'showdown'; reveals: ShowdownReveal[] }
   | { type: 'pot-awarded'; seat: number; amount: number; potIndex: number }
   | { type: 'hand-ended'; stacks: { seat: number; stack: number }[] }
+  | { type: 'reveal-started'; deadline: number | null; seats: number[] }
+  | { type: 'player-shown'; seat: number }
+  | { type: 'player-mucked'; seat: number }
+  | { type: 'reveal-settled' }
   | { type: 'error'; message: string }
 
 export type Evaluate7 = (cards: readonly Card[]) => number

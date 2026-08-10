@@ -9,6 +9,7 @@ import { ChipFX } from './ChipFX.tsx'
 import { EMOTE_LABEL_KEY, EMOTE_MARK } from './emotes.tsx'
 import { Felt } from './Felt.tsx'
 import { chips } from './format.ts'
+import { ResultBanner } from './ResultBanner.tsx'
 import { Seat } from './Seat.tsx'
 import { Stage } from './Stage.tsx'
 import { useTableStore } from './store.ts'
@@ -60,6 +61,7 @@ export function TableScreen({ title }: { title: string }) {
       <Stage>
         <Felt />
         <Board />
+        <ResultBanner />
         <ChipFX />
         {SEAT_INDICES.map((index) => (
           <Seat key={`seat-${index}`} index={index} onSit={onSit} />
