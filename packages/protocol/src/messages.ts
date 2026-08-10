@@ -8,7 +8,7 @@ import type {
 } from '@holdem/engine'
 
 /** Bumped whenever the message shapes change, so a stale tab is told to reload. */
-export const PROTOCOL_VERSION = 1
+export const PROTOCOL_VERSION = 2
 
 export const EMOTES = ['nice-hand', 'thanks', 'wow', 'thinking', 'chips', 'oops'] as const
 export type Emote = (typeof EMOTES)[number]
@@ -26,6 +26,8 @@ export type ClientMessage =
   | { type: 'remove-bot'; seat: number }
   | { type: 'start' }
   | { type: 'emote'; emote: Emote }
+  | { type: 'show' }
+  | { type: 'muck' }
 
 /**
  * Every update carries the whole view rather than only a patch. A hand generates
