@@ -126,6 +126,14 @@ describe('bots', () => {
     expect(seat?.stack).toBe(CONFIG.maxBuyIn)
   })
 
+  test('seats a bot at an optional buyIn when provided', () => {
+    const h = harness()
+    h.host.join({ userId: 'human', name: 'You' })
+    h.host.receive('human', { type: 'sit', seat: 0, buyIn: 5_000 })
+    h.host.receive('human', { type: 'add-bot', seat: 1, difficulty: 'normal', buyIn: 5_000 })
+    expect(h.latest('human')?.update.view.seats[1]?.stack).toBe(5_000)
+  })
+
   test('will not be removed from a seat that holds a person', () => {
     const h = harness()
     seatTable(h, 1)

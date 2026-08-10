@@ -36,8 +36,7 @@ export const MadeHandLabel = memo(function MadeHandLabel({
   const { t } = useLocale()
   const narrow = layout === PORTRAIT || layout.width <= PORTRAIT.width
   const badgeTop = box.top - box.height / 2
-  const cardStackTop =
-    badgeTop - HERO_CARDS_MARGIN - layout.heroCardWidth / CARD_ASPECT
+  const cardStackTop = badgeTop - HERO_CARDS_MARGIN - layout.heroCardWidth / CARD_ASPECT
   const style = narrow
     ? {
         left: box.left,

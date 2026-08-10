@@ -72,6 +72,15 @@ export type MessageKey =
   | 'assist.madeHand'
   | 'assist.handChart'
   | 'assist.close'
+  | 'solo.subtitle'
+  | 'solo.opponents'
+  | 'solo.difficulty'
+  | 'solo.diff.easy'
+  | 'solo.diff.normal'
+  | 'solo.diff.hard'
+  | 'solo.buyIn'
+  | 'solo.buyInAmount'
+  | 'solo.start'
   | 'seconds'
 
 const en = {
@@ -146,6 +155,15 @@ const en = {
   'assist.madeHand': 'Hand help',
   'assist.handChart': 'Hand chart',
   'assist.close': 'Close',
+  'solo.subtitle': 'Everything runs on this device. Nothing is sent anywhere.',
+  'solo.opponents': 'Opponents: {n}',
+  'solo.difficulty': 'Difficulty',
+  'solo.diff.easy': 'Easy',
+  'solo.diff.normal': 'Normal',
+  'solo.diff.hard': 'Hard',
+  'solo.buyIn': 'Buy-in {min} – {max}',
+  'solo.buyInAmount': 'Buy-in amount',
+  'solo.start': 'Sit down with {amount} chips',
   seconds: '{n} seconds',
 } as const satisfies Record<MessageKey, string>
 
@@ -221,6 +239,15 @@ const th: Record<MessageKey, string> = {
   'assist.madeHand': 'ช่วยอ่านมือ',
   'assist.handChart': 'ตารางมือ',
   'assist.close': 'ปิด',
+  'solo.subtitle': 'เล่นบนเครื่องนี้ทั้งหมด ไม่ส่งข้อมูลไปไหน',
+  'solo.opponents': 'คู่แข่ง: {n}',
+  'solo.difficulty': 'ระดับความยาก',
+  'solo.diff.easy': 'ง่าย',
+  'solo.diff.normal': 'ปกติ',
+  'solo.diff.hard': 'ยาก',
+  'solo.buyIn': 'บายอิน {min} – {max}',
+  'solo.buyInAmount': 'จำนวนบายอิน',
+  'solo.start': 'นั่งด้วย {amount} ชิป',
   seconds: '{n} วินาที',
 }
 

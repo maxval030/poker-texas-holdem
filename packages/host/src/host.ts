@@ -247,7 +247,7 @@ export class TableHost {
           type: 'sit',
           seat: message.seat,
           occupant,
-          buyIn: this.state.config.maxBuyIn,
+          buyIn: message.buyIn ?? this.state.config.maxBuyIn,
         })
         return
       }
