@@ -3,14 +3,7 @@ import { createTable, reduce } from '../src/engine.ts'
 import { allRevealDecided, chipDeltas, REVEAL_WINDOW_MS } from '../src/result.ts'
 import type { Command, GameEvent, Occupant, TableState } from '../src/types.ts'
 import { redactEvent, viewFor } from '../src/view.ts'
-import {
-  apply,
-  applyWithEvents,
-  rigHand,
-  seatPlayers,
-  testConfig,
-  testContext,
-} from './helpers.ts'
+import { apply, applyWithEvents, rigHand, seatPlayers, testConfig, testContext } from './helpers.ts'
 
 describe('chipDeltas', () => {
   test('awards minus committed for every contributor', () => {
@@ -232,9 +225,9 @@ describe('viewFor reveal redaction + result', () => {
     expect(rawShowdown?.type).toBe('showdown')
     if (rawShowdown?.type !== 'showdown') throw new Error('expected showdown event')
     expect(rawShowdown.reveals.length).toBe(2)
-    expect(rawShowdown.reveals.every((r) => r.cards.length === 2 && typeof r.score === 'number')).toBe(
-      true,
-    )
+    expect(
+      rawShowdown.reveals.every((r) => r.cards.length === 2 && typeof r.score === 'number'),
+    ).toBe(true)
 
     // Client-bound events strip all showdown reveals (scores/cards/best).
     for (const viewer of [0, 1, null] as const) {

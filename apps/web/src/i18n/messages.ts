@@ -69,6 +69,9 @@ export type MessageKey =
   | 'hand.twoPair'
   | 'hand.onePair'
   | 'hand.highCard'
+  | 'assist.madeHand'
+  | 'assist.handChart'
+  | 'assist.close'
   | 'seconds'
 
 const en = {
@@ -140,6 +143,9 @@ const en = {
   'hand.twoPair': 'Two pair',
   'hand.onePair': 'One pair',
   'hand.highCard': 'High card',
+  'assist.madeHand': 'Hand help',
+  'assist.handChart': 'Hand chart',
+  'assist.close': 'Close',
   seconds: '{n} seconds',
 } as const satisfies Record<MessageKey, string>
 
@@ -212,6 +218,9 @@ const th: Record<MessageKey, string> = {
   'hand.twoPair': 'ทูแพร์',
   'hand.onePair': 'วันแพร์',
   'hand.highCard': 'ไฮการ์ด',
+  'assist.madeHand': 'ช่วยอ่านมือ',
+  'assist.handChart': 'ตารางมือ',
+  'assist.close': 'ปิด',
   seconds: '{n} วินาที',
 }
 

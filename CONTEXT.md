@@ -37,8 +37,24 @@ Comparing remaining hands when two or more players contest; may produce Showdown
 _Avoid_: Reveal (noun for the whole end state)
 
 **Hand category**:
-The ranked class of a seven-card best hand (e.g. full house), shown as the category label only—not kicker detail—and only when that winner has Shown. Shown hole cards appear at the seat; the Result banner carries the category text.
+The ranked class of a poker hand (straight flush through high card), as a label only—not kicker detail. Used on the Result banner for winners who Showed, and as the label on the Made hand HUD.
 _Avoid_: Hand name, poker hand (ambiguous with the deal)
+
+**Made hand**:
+The local seated viewer's current best hand from their own hole cards and the board so far, computed only on that client. When the viewer enables Made hand assist, it is shown from deal until they fold or the hand completes (Reveal window / Result banner takes over). Preflop uses the two hole cards alone; from the flop onward it is the best five among available hole+board cards (standard Texas selection, so unused hole cards mean playing the board). When several five-card sets tie for best score, Contributing cards are taken from the first set in a fixed combo order.
+_Avoid_: Current hand, live strength, equity
+
+**Made hand assist**:
+A local viewer preference (browser localStorage) that turns the Made hand label and Contributing cards highlight on or off. First visit defaults to on; later visits restore the last choice. It does not change table rules, Result banner, or Hand chart availability.
+_Avoid_: Trainer mode, HUD setting (too vague alone)
+
+**Contributing cards**:
+The subset of hole and board cards that form the Made hand's best five (or fewer preflop); cards not in that subset are not highlighted.
+_Avoid_: Used cards, selected cards, winning cards (implies the pot)
+
+**Hand chart**:
+An optional on-table reference of Hand category ranks from strongest to weakest, opened and closed by the viewer (not always on screen).
+_Avoid_: Odds table, strategy chart, range chart
 
 **Chip delta**:
 A player's net chip change for the completed hand: pot awards received minus that player's totalCommitted for the hand.
@@ -59,5 +75,5 @@ Two or more players who each receive a pot award in the same hand; the result ba
 _Avoid_: Tie alone (ties are one cause; side pots also create multiple winners)
 
 **Result banner**:
-Center-table summary after awards: Split winners or sole winner names, optional Hand category lines for winners who Showed, and Chip deltas for everyone who put chips in the hand. It appears as soon as pots are awarded and stays until the next hand starts. Leaving the table during the Reveal window does not dismiss it for others.
+Center-table summary after awards: Split winners or sole winner names, optional Hand category lines for winners who Showed, and Chip deltas for everyone who put chips in the hand. It appears as soon as pots are awarded and stays until the next hand starts, placed above the board so community cards stay visible. Leaving the table during the Reveal window does not dismiss it for others.
 _Avoid_: Winner modal, end screen, toast

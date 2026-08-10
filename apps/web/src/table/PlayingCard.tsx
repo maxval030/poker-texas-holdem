@@ -43,6 +43,8 @@ interface PlayingCardProps {
   width: number
   className?: string
   dimmed?: boolean
+  /** Glow ring for Made hand contributing cards. Wins over `dimmed` when both set. */
+  emphasized?: boolean
   /** Staggers deal / flip when several cards arrive together. */
   dealDelayMs?: number
   /** When true, the card flies in from the board centre before settling. */
@@ -54,22 +56,27 @@ export const PlayingCard = memo(function PlayingCard({
   width,
   className,
   dimmed,
+  emphasized,
   dealDelayMs = 0,
   dealFromCenter = false,
 }: PlayingCardProps) {
   const reduceMotion = useReducedMotion()
   const height = width / CARD_ASPECT
   const faceUp = card !== null
+  const effectivelyDimmed = Boolean(dimmed) && !emphasized
+  const opacity = effectivelyDimmed ? 0.45 : 1
+  const ringClass = emphasized ? 'ring-2 ring-brass-300/80 rounded-lg' : undefined
+  const mergedClassName = [className, ringClass].filter(Boolean).join(' ') || undefined
 
   return (
     <motion.div
-      className={className}
+      className={mergedClassName}
       style={{
         width,
         height,
         perspective: 800,
         filter: 'drop-shadow(0 2px 3px rgba(0,0,0,.45))',
-        opacity: dimmed ? 0.45 : 1,
+        opacity,
       }}
       initial={
         reduceMotion
@@ -81,7 +88,7 @@ export const PlayingCard = memo(function PlayingCard({
               x: dealFromCenter ? 0 : 0,
             }
       }
-      animate={{ opacity: dimmed ? 0.45 : 1, scale: 1, y: 0, x: 0 }}
+      animate={{ opacity, scale: 1, y: 0, x: 0 }}
       transition={{
         duration: 0.32,
         delay: dealDelayMs / 1000,

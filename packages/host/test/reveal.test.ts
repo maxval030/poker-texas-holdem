@@ -135,7 +135,9 @@ describe('showdown event redaction', () => {
     expect(full?.type).toBe('showdown')
     if (full?.type !== 'showdown') throw new Error('expected committed showdown')
     expect(full.reveals.length).toBe(2)
-    expect(full.reveals.every((r) => r.cards.length === 2 && typeof r.score === 'number')).toBe(true)
+    expect(full.reveals.every((r) => r.cards.length === 2 && typeof r.score === 'number')).toBe(
+      true,
+    )
 
     const deliveredShowdowns = h.sent.flatMap((entry) =>
       entry.message.type === 'update'
@@ -149,9 +151,9 @@ describe('showdown event redaction', () => {
 
     // Views stay redacted until Show; neither client sees the other's hole cards.
     for (const userId of ['p0', 'p1'] as const) {
-      const update = [...h.sent].reverse().find(
-        (entry) => entry.userId === userId && entry.message.type === 'update',
-      )
+      const update = [...h.sent]
+        .reverse()
+        .find((entry) => entry.userId === userId && entry.message.type === 'update')
       expect(update?.message.type).toBe('update')
       if (update?.message.type !== 'update') continue
       const view = update.message.update.view

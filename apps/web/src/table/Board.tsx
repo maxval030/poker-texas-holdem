@@ -5,6 +5,7 @@ import { chips } from './format.ts'
 import { PlayingCard } from './PlayingCard.tsx'
 import { useLayout } from './Stage.tsx'
 import { useBoard } from './store.ts'
+import { useHeroMadeHand } from './useMadeHand.ts'
 
 const BOARD_SLOTS = ['flop-1', 'flop-2', 'flop-3', 'turn', 'river'] as const
 
@@ -12,6 +13,8 @@ export const Board = memo(function Board() {
   const { cards, potTotal } = useBoard()
   const { board, pot } = useLayout()
   const { t } = useLocale()
+  const { made, visible: madeVisible } = useHeroMadeHand()
+  const boardContributing = made?.boardContributing ?? []
   const width = BOARD_SLOTS.length * board.cardWidth + (BOARD_SLOTS.length - 1) * board.gap
 
   return (
@@ -44,6 +47,8 @@ export const Board = memo(function Board() {
                 width={board.cardWidth}
                 dealDelayMs={slot * 90}
                 dealFromCenter
+                emphasized={madeVisible && boardContributing.includes(card)}
+                dimmed={madeVisible && !boardContributing.includes(card)}
               />
             </AnimatePresence>
           )

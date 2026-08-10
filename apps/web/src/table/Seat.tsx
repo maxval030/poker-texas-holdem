@@ -4,9 +4,11 @@ import { ActionClock } from './ActionClock.tsx'
 import { EMOTE_LABEL_KEY, EMOTE_MARK } from './emotes.tsx'
 import { chips, initials } from './format.ts'
 import { BUTTON_SIZE, type Layout, positionOfSeat } from './geometry.ts'
+import { MadeHandLabel } from './MadeHandLabel.tsx'
 import { PlayingCard } from './PlayingCard.tsx'
 import { useLayout } from './Stage.tsx'
 import { type SeatSlice, useSeatEmote, useSeatSlice, useTableStore } from './store.ts'
+import { useHeroMadeHand } from './useMadeHand.ts'
 
 interface SeatProps {
   index: number
@@ -19,6 +21,7 @@ export const Seat = memo(function Seat({ index, onSit }: SeatProps) {
   const layout = useLayout()
   const clockSkewMs = useTableStore((state) => state.clockSkewMs)
   const viewerSeat = useTableStore((state) => state.view?.viewerSeat ?? null)
+  const { made, visible: madeVisible } = useHeroMadeHand()
   const { t } = useLocale()
 
   const position = positionOfSeat(index, viewerSeat)
@@ -47,6 +50,8 @@ export const Seat = memo(function Seat({ index, onSit }: SeatProps) {
   const folded = slice.player?.status === 'folded'
   const hero = slice.isViewer
   const cardWidth = hero ? layout.heroCardWidth : layout.seatCardWidth
+  const holeContributing = made?.holeContributing ?? []
+  const showMade = hero && madeVisible && made !== null
 
   return (
     <>
@@ -67,16 +72,20 @@ export const Seat = memo(function Seat({ index, onSit }: SeatProps) {
               opacity: folded ? 0.3 : 1,
             }}
           >
-            <PlayingCard
-              card={slice.player.holeCards?.[0] ?? null}
-              width={cardWidth}
-              dealDelayMs={position * 40}
-            />
-            <PlayingCard
-              card={slice.player.holeCards?.[1] ?? null}
-              width={cardWidth}
-              dealDelayMs={position * 40 + 70}
-            />
+            {([0, 1] as const).map((slot) => {
+              const card = slice.player?.holeCards?.[slot] ?? null
+              const contributing = showMade && card !== null && holeContributing.includes(card)
+              return (
+                <PlayingCard
+                  key={slot}
+                  card={card}
+                  width={cardWidth}
+                  dealDelayMs={position * 40 + slot * 70}
+                  emphasized={contributing}
+                  dimmed={Boolean(showMade && card !== null && !contributing)}
+                />
+              )
+            })}
           </div>
         )}
 
@@ -146,6 +155,8 @@ export const Seat = memo(function Seat({ index, onSit }: SeatProps) {
           </div>
         )}
       </div>
+
+      {showMade && <MadeHandLabel made={made} box={box} layout={layout} />}
 
       {slice.isButton && <DealerButton layout={layout} position={position} />}
       {slice.player && slice.player.committed > 0 && (
