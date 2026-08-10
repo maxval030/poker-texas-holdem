@@ -46,23 +46,21 @@ export function HandChart({ onClose }: HandChartProps) {
   }, [onClose])
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3"
-      onClick={onClose}
-      role="presentation"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/60"
+        onClick={onClose}
+        aria-label={t('assist.close')}
+      />
       <div
-        className="max-h-[min(90dvh,720px)] w-full max-w-md overflow-y-auto rounded-2xl border border-brass-400/35 bg-[#1a120c] p-4 shadow-lg"
-        onClick={(event) => event.stopPropagation()}
+        className="relative max-h-[min(90dvh,720px)] w-full max-w-md overflow-y-auto rounded-2xl border border-brass-400/35 bg-[#1a120c] p-4 shadow-lg"
         role="dialog"
         aria-modal="true"
         aria-labelledby="hand-chart-title"
       >
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2
-            id="hand-chart-title"
-            className="text-sm font-semibold tracking-wide text-brass-300"
-          >
+          <h2 id="hand-chart-title" className="text-sm font-semibold tracking-wide text-brass-300">
             {t('assist.handChart')}
           </h2>
           <button
@@ -80,8 +78,8 @@ export function HandChart({ onClose }: HandChartProps) {
               <li key={category} className="flex items-center justify-between gap-3">
                 <span className="min-w-0 text-sm text-cream/90">{t(CATEGORY_KEY[category])}</span>
                 <div className="flex shrink-0 gap-0.5">
-                  {cards.map((card, index) => (
-                    <PlayingCard key={`${category}-${index}`} card={card} width={CARD_WIDTH} />
+                  {cards.map((card) => (
+                    <PlayingCard key={`${category}-${card}`} card={card} width={CARD_WIDTH} />
                   ))}
                 </div>
               </li>

@@ -77,8 +77,7 @@ export function combinationsNChoose5(n: number): readonly (readonly number[])[] 
   for (let a = 0; a < n; a++)
     for (let b = a + 1; b < n; b++)
       for (let c = b + 1; c < n; c++)
-        for (let d = c + 1; d < n; d++)
-          for (let e = d + 1; e < n; e++) out.push([a, b, c, d, e])
+        for (let d = c + 1; d < n; d++) for (let e = d + 1; e < n; e++) out.push([a, b, c, d, e])
   return out
 }
 
