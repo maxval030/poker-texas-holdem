@@ -3,6 +3,8 @@ import { openapi } from '@elysiajs/openapi'
 import { Elysia } from 'elysia'
 import { authPlugin } from './auth-plugin.ts'
 import { assertProductionSecrets, env } from './env.ts'
+import { gateRoutes } from './gate/routes.ts'
+import { rateLimitPlugin } from './rate-limit/plugin.ts'
 import { tableWs } from './realtime/ws.ts'
 import { startJanitor } from './rooms/lifecycle.ts'
 import { roomRoutes, ticketRoutes } from './rooms/routes.ts'
@@ -36,11 +38,14 @@ const app = new Elysia()
           { name: 'Rooms', description: 'Private cash tables' },
           { name: 'Realtime', description: 'Ticket issuance for WebSocket upgrades' },
           { name: 'Stats', description: 'Public live counters' },
+          { name: 'Gate', description: 'Turnstile verification' },
         ],
       },
     }),
   )
+  .use(rateLimitPlugin)
   .use(authPlugin)
+  .use(gateRoutes)
   .get('/health', () => ({ ok: true as const }), {
     detail: { summary: 'Liveness probe', tags: ['Realtime'] },
   })

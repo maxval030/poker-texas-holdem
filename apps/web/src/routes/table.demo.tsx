@@ -1,10 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { requireGateVerified } from '../gate/requireGate.ts'
 import { demoUpdate } from '../table/fixture.ts'
 import { useTableStore } from '../table/store.ts'
 import { TableScreen } from '../table/TableScreen.tsx'
 
 export const Route = createFileRoute('/table/demo')({
+  beforeLoad: () => requireGateVerified(),
   component: DemoTable,
   ssr: false,
 })

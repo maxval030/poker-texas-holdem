@@ -28,11 +28,16 @@ export const env = {
     clientId: optional('DISCORD_CLIENT_ID'),
     clientSecret: optional('DISCORD_CLIENT_SECRET'),
   },
+  turnstile: {
+    secretKey: optional('TURNSTILE_SECRET_KEY'),
+    gateTtlSeconds: 86_400,
+  },
 } as const
 
 export function assertProductionSecrets(): void {
   if (process.env.NODE_ENV === 'production') {
     required('BETTER_AUTH_SECRET')
     required('DATABASE_URL')
+    required('TURNSTILE_SECRET_KEY')
   }
 }

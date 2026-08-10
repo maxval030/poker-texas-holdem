@@ -21,8 +21,10 @@ COPY . .
 # Browser-facing URLs are baked into the Vite client bundle at build time.
 ARG VITE_API_URL=http://localhost:3001
 ARG VITE_WS_URL=ws://localhost:3001
+ARG VITE_TURNSTILE_SITE_KEY=
 ENV VITE_API_URL=$VITE_API_URL \
-    VITE_WS_URL=$VITE_WS_URL
+    VITE_WS_URL=$VITE_WS_URL \
+    VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 RUN bun run --cwd apps/web build
 
 # --- API / WebSocket server -------------------------------------------------

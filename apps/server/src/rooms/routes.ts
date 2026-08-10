@@ -1,5 +1,7 @@
 import { Elysia, t } from 'elysia'
 import { authPlugin } from '../auth-plugin.ts'
+import { gatePlugin } from '../gate/plugin.ts'
+import { rateLimitPlugin } from '../rate-limit/plugin.ts'
 import { ACTION_CLOCK_OPTIONS_MS } from '../db/schema.ts'
 import { issueWsTicket } from '../valkey.ts'
 import {
@@ -18,6 +20,8 @@ const rebuySchema = t.Union([
 ])
 
 export const roomRoutes = new Elysia({ prefix: '/rooms' })
+  .use(rateLimitPlugin)
+  .use(gatePlugin)
   .use(authPlugin)
   .post(
     '/',
@@ -36,6 +40,8 @@ export const roomRoutes = new Elysia({ prefix: '/rooms' })
     },
     {
       auth: true,
+      gate: true,
+      rateLimit: { limit: 10, windowSeconds: 3_600, key: 'user', scope: 'rooms:create' },
       body: t.Object({
         smallBlind: t.Integer({ minimum: 1 }),
         bigBlind: t.Integer({ minimum: 2 }),
@@ -67,6 +73,7 @@ export const roomRoutes = new Elysia({ prefix: '/rooms' })
     },
     {
       auth: true,
+      gate: true,
       params: t.Object({ code: t.String({ minLength: 4, maxLength: 8 }) }),
       detail: {
         summary: 'Look up an open room by invite code',
@@ -89,6 +96,7 @@ export const roomRoutes = new Elysia({ prefix: '/rooms' })
     },
     {
       auth: true,
+      gate: true,
       params: t.Object({ id: t.String({ minLength: 8 }) }),
       detail: {
         summary: 'Look up an open room by id',
@@ -112,6 +120,7 @@ export const roomRoutes = new Elysia({ prefix: '/rooms' })
     },
     {
       auth: true,
+      gate: true,
       params: t.Object({ id: t.String({ minLength: 8 }) }),
       detail: {
         summary: 'Close a table immediately (host only)',
@@ -120,7 +129,11 @@ export const roomRoutes = new Elysia({ prefix: '/rooms' })
     },
   )
 
-export const ticketRoutes = new Elysia().use(authPlugin).post(
+export const ticketRoutes = new Elysia()
+  .use(rateLimitPlugin)
+  .use(gatePlugin)
+  .use(authPlugin)
+  .post(
   '/ws-ticket',
   async ({ user, body, set }) => {
     try {
@@ -141,6 +154,8 @@ export const ticketRoutes = new Elysia().use(authPlugin).post(
   },
   {
     auth: true,
+    gate: true,
+    rateLimit: { limit: 60, windowSeconds: 60, key: 'user', scope: 'ws-ticket' },
     body: t.Object({
       roomId: t.String({ minLength: 8 }),
     }),

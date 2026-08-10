@@ -1,9 +1,13 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
+import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { betterAuth } from 'better-auth'
 import { anonymous } from 'better-auth/plugins'
 import { db } from './db/client.ts'
 import * as schema from './db/schema.ts'
 import { env } from './env.ts'
+import { hasValidGate } from './gate/session.ts'
+import { clientIp } from './rate-limit/ip.ts'
+import { hitRateLimit } from './rate-limit/limit.ts'
 
 function socialProviders() {
   const providers: Record<string, { clientId: string; clientSecret: string }> = {}
@@ -65,6 +69,21 @@ export const auth = betterAuth({
       emailDomainName: 'guest.holdem.local',
     }),
   ],
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/sign-in/anonymous') return
+
+      if (!(await hasValidGate(ctx.request?.headers ?? new Headers()))) {
+        throw new APIError('FORBIDDEN', { message: 'verification required' })
+      }
+
+      const ip = clientIp(ctx.request!)
+      const limited = await hitRateLimit(`auth:anonymous:${ip}`, 10, 60)
+      if (limited.limited) {
+        throw new APIError('TOO_MANY_REQUESTS', { message: 'rate limit exceeded' })
+      }
+    }),
+  },
 })
 
 export type AuthSession = typeof auth.$Infer.Session

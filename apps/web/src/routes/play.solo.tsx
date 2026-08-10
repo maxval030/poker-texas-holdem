@@ -1,6 +1,7 @@
 import type { BotDifficulty, TableConfig } from '@holdem/engine'
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { requireGateVerified } from '../gate/requireGate.ts'
 import { LanguageSwitch, useLocale } from '../i18n/locale.tsx'
 import type { SoloSetup } from '../solo/messages.ts'
 import { createSoloTransport } from '../solo/transport.ts'
@@ -9,6 +10,7 @@ import { useTableStore } from '../table/store.ts'
 import { TableScreen } from '../table/TableScreen.tsx'
 
 export const Route = createFileRoute('/play/solo')({
+  beforeLoad: () => requireGateVerified(),
   component: SoloPage,
   // The whole game runs in a Web Worker, so there is nothing to render on the
   // server and rendering it there would only cost a hydration pass.

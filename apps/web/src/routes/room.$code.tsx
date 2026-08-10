@@ -8,12 +8,14 @@ import {
   hasUsableDisplayName,
 } from '../auth/displayName.ts'
 import { ensureNamedPlayer } from '../auth/ensureNamedPlayer.ts'
+import { requireGateVerified } from '../gate/requireGate.ts'
 import { LanguageSwitch, useLocale } from '../i18n/locale.tsx'
 import { createOnlineTransport } from '../online/transport.ts'
 import { useTableStore } from '../table/store.ts'
 import { TableScreen } from '../table/TableScreen.tsx'
 
 export const Route = createFileRoute('/room/$code')({
+  beforeLoad: () => requireGateVerified(),
   component: RoomPage,
   ssr: false,
 })

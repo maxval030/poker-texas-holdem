@@ -7,9 +7,11 @@ import {
   hasUsableDisplayName,
 } from '../auth/displayName.ts'
 import { ensureNamedPlayer } from '../auth/ensureNamedPlayer.ts'
+import { requireGateVerified } from '../gate/requireGate.ts'
 import { LanguageSwitch, useLocale } from '../i18n/locale.tsx'
 
 export const Route = createFileRoute('/room/join')({
+  beforeLoad: () => requireGateVerified(),
   component: JoinRoomPage,
   ssr: false,
 })

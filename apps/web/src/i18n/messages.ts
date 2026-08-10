@@ -8,6 +8,12 @@ export type MessageKey =
   | 'home.join'
   | 'home.demo'
   | 'home.onlineStats'
+  | 'gate.title'
+  | 'gate.hint'
+  | 'gate.error'
+  | 'gate.retry'
+  | 'gate.checking'
+  | 'gate.verifying'
   | 'create.title'
   | 'create.subtitle'
   | 'create.name'
@@ -106,6 +112,12 @@ const en = {
   'home.join': 'Join with a code',
   'home.demo': 'Layout preview',
   'home.onlineStats': '{rooms} tables live · {players} players online',
+  'gate.title': 'Verify you are human',
+  'gate.hint': 'Complete the check to enter the lobby.',
+  'gate.error': 'Verification failed. Please try again.',
+  'gate.retry': 'Try again',
+  'gate.checking': 'Checking…',
+  'gate.verifying': 'Verifying…',
   'create.title': 'Create a private table',
   'create.subtitle': 'Friends join with the code. No public lobby.',
   'create.name': 'Display name',
@@ -205,6 +217,12 @@ const th: Record<MessageKey, string> = {
   'home.join': 'เข้าด้วยรหัส',
   'home.demo': 'ดูเลย์เอาต์',
   'home.onlineStats': '{rooms} โต๊ะเล่น · {players} คนออนไลน์',
+  'gate.title': 'ยืนยันว่าคุณเป็นคน',
+  'gate.hint': 'ทำการตรวจสอบเพื่อเข้าใช้งาน',
+  'gate.error': 'ยืนยันไม่สำเร็จ ลองใหม่อีกครั้ง',
+  'gate.retry': 'ลองอีกครั้ง',
+  'gate.checking': 'กำลังตรวจสอบ…',
+  'gate.verifying': 'กำลังยืนยัน…',
   'create.title': 'สร้างโต๊ะส่วนตัว',
   'create.subtitle': 'เพื่อนเข้าด้วยรหัส ไม่มีล็อบบี้สาธารณะ',
   'create.name': 'ชื่อที่แสดง',
