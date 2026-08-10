@@ -1,5 +1,7 @@
 import type { Card } from './cards.ts'
+import { handCategory, type HandCategory } from './handrank.ts'
 import { buildPots } from './pots.ts'
+import { chipDeltas } from './result.ts'
 import type { GameEvent, HandPlayer, HandState, Pot, Seat, TableState } from './types.ts'
 
 export interface HandPlayerView extends Omit<HandPlayer, 'holeCards'> {
@@ -13,9 +15,19 @@ export interface HandStateView extends Omit<HandState, 'players' | 'deck'> {
   potTotal: number
 }
 
+export interface HandResultView {
+  winners: number[]
+  deltas: { seat: number; delta: number; awarded: number; committed: number }[]
+  categories: { seat: number; category: HandCategory }[]
+  revealDeadline: number | null
+  canShow: boolean
+  settled: boolean
+}
+
 export interface TableStateView extends Omit<TableState, 'hand'> {
   hand: HandStateView | null
   viewerSeat: number | null
+  result: HandResultView | null
 }
 
 /**
@@ -25,13 +37,15 @@ export interface TableStateView extends Omit<TableState, 'hand'> {
 export function viewFor(state: TableState, viewerSeat: number | null): TableStateView {
   const seats: Seat[] = state.seats.map((seat) => ({ ...seat }))
   if (!state.hand) {
-    return { ...state, seats, hand: null, viewerSeat }
+    return { ...state, seats, hand: null, viewerSeat, result: null }
   }
 
   const hand = state.hand
-  const revealAll = hand.complete
+  const shown = new Set(
+    hand.reveal?.choices.filter((c) => c.choice === 'shown').map((c) => c.seat) ?? [],
+  )
   const players: HandPlayerView[] = hand.players.map((player) => {
-    const visible = revealAll ? player.status !== 'folded' : player.seat === viewerSeat
+    const visible = player.seat === viewerSeat || shown.has(player.seat)
     return {
       seat: player.seat,
       status: player.status,
@@ -52,6 +66,7 @@ export function viewFor(state: TableState, viewerSeat: number | null): TableStat
     ...state,
     seats,
     viewerSeat,
+    result: buildResult(hand, viewerSeat),
     hand: {
       handNumber: hand.handNumber,
       buttonSeat: hand.buttonSeat,
@@ -71,6 +86,36 @@ export function viewFor(state: TableState, viewerSeat: number | null): TableStat
       pots,
       potTotal,
     },
+  }
+}
+
+function buildResult(hand: HandState, viewerSeat: number | null): HandResultView | null {
+  if (!hand.complete || !hand.reveal) return null
+
+  const reveal = hand.reveal
+  const awardedBySeat = new Map<number, number>()
+  for (const award of reveal.awards) {
+    awardedBySeat.set(award.seat, (awardedBySeat.get(award.seat) ?? 0) + award.amount)
+  }
+  const winners = [...awardedBySeat.entries()]
+    .filter(([, amount]) => amount > 0)
+    .map(([seat]) => seat)
+
+  const winnerSet = new Set(winners)
+  const categories: { seat: number; category: HandCategory }[] = []
+  for (const entry of reveal.choices) {
+    if (entry.choice !== 'shown' || entry.score === undefined) continue
+    if (!winnerSet.has(entry.seat)) continue
+    categories.push({ seat: entry.seat, category: handCategory(entry.score) })
+  }
+
+  return {
+    winners,
+    deltas: chipDeltas(reveal.awards, hand.players),
+    categories,
+    revealDeadline: reveal.deadline,
+    canShow: reveal.choices.some((c) => c.seat === viewerSeat && c.choice === 'pending'),
+    settled: reveal.settled,
   }
 }
 

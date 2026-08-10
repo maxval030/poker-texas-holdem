@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { createTable, reduce } from '../src/engine.ts'
 import { chipDeltas, allRevealDecided, REVEAL_WINDOW_MS } from '../src/result.ts'
 import type { Occupant, TableState } from '../src/types.ts'
+import { viewFor } from '../src/view.ts'
 import { apply, applyWithEvents, seatPlayers, testConfig, testContext } from './helpers.ts'
 
 describe('chipDeltas', () => {
@@ -148,5 +149,42 @@ describe('reveal window', () => {
     const next = reduce(state, { type: 'start-hand' }, ctx)
     expect(next.events.some((e) => e.type === 'error')).toBe(false)
     expect(next.state.hand?.complete).toBe(false)
+  })
+})
+
+describe('viewFor reveal redaction + result', () => {
+  test('complete hand does not expose mucked opponent cards', () => {
+    let { state } = foldWinHumanVsBot()
+    const winner = 0
+    state = apply(state, { type: 'muck', seat: winner })
+
+    const view = viewFor(state, null)
+    const opp = view.hand?.players.find((p) => p.seat === winner)
+    expect(opp?.holeCards).toBeNull()
+    expect(view.result).not.toBeNull()
+    expect(view.result?.winners).toEqual([winner])
+    expect(view.result?.categories).toEqual([])
+    expect(view.result?.settled).toBe(true)
+    expect(view.result?.canShow).toBe(false)
+  })
+
+  test('shown winner exposes cards and category on result', () => {
+    let { state } = foldWinHumanVsBot()
+    const winnerSeat = 0
+    expect(state.hand?.board.length).toBe(0)
+
+    state = apply(state, { type: 'show', seat: winnerSeat })
+
+    expect(state.hand?.board.length).toBe(5)
+    const choice = state.hand?.reveal?.choices.find((c) => c.seat === winnerSeat)
+    expect(choice?.choice).toBe('shown')
+    expect(typeof choice?.score).toBe('number')
+
+    const view = viewFor(state, winnerSeat)
+    expect(view.result?.categories.some((c) => c.seat === winnerSeat)).toBe(true)
+    expect(view.hand?.players.find((p) => p.seat === winnerSeat)?.holeCards).not.toBeNull()
+    expect(view.hand?.board.length).toBe(5)
+    expect(view.result?.canShow).toBe(false)
+    expect(view.result?.settled).toBe(true)
   })
 })

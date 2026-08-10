@@ -86,7 +86,7 @@ export interface RevealAward {
 export interface RevealState {
   deadline: number | null
   settled: boolean
-  choices: { seat: number; choice: RevealChoice }[]
+  choices: { seat: number; choice: RevealChoice; score?: number }[]
   awards: RevealAward[]
 }
 

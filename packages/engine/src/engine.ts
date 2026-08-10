@@ -129,7 +129,7 @@ function dispatch(
       events.push({ type: 'table-status', status: state.status })
       return
     case 'show':
-      decideReveal(state, command.seat, 'shown', events)
+      decideReveal(state, command.seat, 'shown', events, ctx)
       return
     case 'muck':
       decideReveal(state, command.seat, 'mucked', events)
@@ -631,15 +631,27 @@ function decideReveal(
   seat: number,
   choice: 'shown' | 'mucked',
   events: GameEvent[],
+  ctx?: EngineContext,
 ): void {
-  const reveal = state.hand?.reveal
-  if (!reveal || reveal.settled) fail('no reveal in progress')
+  const hand = state.hand
+  const reveal = hand?.reveal
+  if (!hand || !reveal || reveal.settled) fail('no reveal in progress')
   const entry = reveal.choices.find((c) => c.seat === seat)
   if (!entry) fail(`seat ${seat} is not eligible to reveal`)
   if (entry.choice !== 'pending') fail(`seat ${seat} has already decided`)
 
   entry.choice = choice
   events.push(choice === 'shown' ? { type: 'player-shown', seat } : { type: 'player-mucked', seat })
+
+  if (choice === 'shown' && ctx) {
+    while (hand.board.length < 5) {
+      hand.board.push(hand.deck.pop() as Card)
+    }
+    const player = hand.players.find((p) => p.seat === seat)
+    if (player) {
+      entry.score = ctx.evaluate7([...player.holeCards, ...hand.board])
+    }
+  }
 
   if (allRevealDecided(reveal)) {
     reveal.settled = true
