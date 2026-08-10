@@ -123,8 +123,14 @@ function buildResult(hand: HandState, viewerSeat: number | null): HandResultView
  * Events are published between instances with every hole card intact, because a
  * new table owner has to be able to rebuild the hand. This runs at the edge, once
  * per recipient, and is the last thing between a private card and a socket.
+ *
+ * Showdown reveals stay on the Valkey/`onCommit` path only; clients learn hole
+ * cards from the redacted view after a seat Shows.
  */
 export function redactEvent(event: GameEvent, viewerSeat: number | null): GameEvent | null {
+  if (event.type === 'showdown') {
+    return { type: 'showdown', reveals: [] }
+  }
   if (event.type !== 'hole-cards-dealt') return event
   const deals = event.deals.filter((deal) => deal.seat === viewerSeat)
   if (deals.length === 0) return null

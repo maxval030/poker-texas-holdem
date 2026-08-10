@@ -1,9 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 import { createTable, reduce } from '../src/engine.ts'
 import { allRevealDecided, chipDeltas, REVEAL_WINDOW_MS } from '../src/result.ts'
-import type { Occupant, TableState } from '../src/types.ts'
-import { viewFor } from '../src/view.ts'
-import { apply, applyWithEvents, seatPlayers, testConfig, testContext } from './helpers.ts'
+import type { Command, GameEvent, Occupant, TableState } from '../src/types.ts'
+import { redactEvent, viewFor } from '../src/view.ts'
+import {
+  apply,
+  applyWithEvents,
+  rigHand,
+  seatPlayers,
+  testConfig,
+  testContext,
+} from './helpers.ts'
 
 describe('chipDeltas', () => {
   test('awards minus committed for every contributor', () => {
@@ -152,6 +159,24 @@ describe('reveal window', () => {
   })
 })
 
+/** Heads-up all-in to showdown with both humans still contesting. */
+function headsUpShowdown(): { state: TableState; events: GameEvent[] } {
+  let state = apply(seatPlayers([100, 100], testConfig({ maxSeats: 2 })), { type: 'start-hand' })
+  rigHand(state, { 0: 'As Ks', 1: '2c 7d' }, 'Ah Kd Qs 3h 4d')
+
+  const script: Command[] = [
+    { type: 'act', seat: 0, action: { type: 'all-in' } },
+    { type: 'act', seat: 1, action: { type: 'call' } },
+  ]
+  let events: GameEvent[] = []
+  for (const command of script) {
+    const result = reduce(state, command, testContext())
+    state = result.state
+    events = result.events
+  }
+  return { state, events }
+}
+
 describe('viewFor reveal redaction + result', () => {
   test('complete hand does not expose mucked opponent cards', () => {
     let { state } = foldWinHumanVsBot()
@@ -171,6 +196,7 @@ describe('viewFor reveal redaction + result', () => {
   test('shown winner exposes cards and category on result', () => {
     let { state } = foldWinHumanVsBot()
     const winnerSeat = 0
+    const otherSeat = 1
     expect(state.hand?.board.length).toBe(0)
 
     state = apply(state, { type: 'show', seat: winnerSeat })
@@ -180,11 +206,60 @@ describe('viewFor reveal redaction + result', () => {
     expect(choice?.choice).toBe('shown')
     expect(typeof choice?.score).toBe('number')
 
-    const view = viewFor(state, winnerSeat)
-    expect(view.result?.categories.some((c) => c.seat === winnerSeat)).toBe(true)
-    expect(view.hand?.players.find((p) => p.seat === winnerSeat)?.holeCards).not.toBeNull()
-    expect(view.hand?.board.length).toBe(5)
-    expect(view.result?.canShow).toBe(false)
-    expect(view.result?.settled).toBe(true)
+    const showerView = viewFor(state, winnerSeat)
+    expect(showerView.result?.categories.some((c) => c.seat === winnerSeat)).toBe(true)
+    expect(showerView.hand?.players.find((p) => p.seat === winnerSeat)?.holeCards).not.toBeNull()
+    expect(showerView.hand?.board.length).toBe(5)
+    expect(showerView.result?.canShow).toBe(false)
+    expect(showerView.result?.settled).toBe(true)
+
+    // Opponents and spectators must see Shown cards, not only the shower.
+    for (const viewer of [otherSeat, null] as const) {
+      const view = viewFor(state, viewer)
+      expect(view.hand?.players.find((p) => p.seat === winnerSeat)?.holeCards).not.toBeNull()
+      expect(view.result?.categories.some((c) => c.seat === winnerSeat)).toBe(true)
+    }
+  })
+
+  test('showdown keeps hole cards private until Show; muck stays hidden', () => {
+    let { state, events } = headsUpShowdown()
+    expect(state.hand?.complete).toBe(true)
+    expect(events.some((e) => e.type === 'showdown')).toBe(true)
+    expect(state.hand?.reveal?.settled).toBe(false)
+    expect(state.hand?.reveal?.choices.map((c) => c.seat).sort()).toEqual([0, 1])
+
+    const rawShowdown = events.find((e) => e.type === 'showdown')
+    expect(rawShowdown?.type).toBe('showdown')
+    if (rawShowdown?.type !== 'showdown') throw new Error('expected showdown event')
+    expect(rawShowdown.reveals.length).toBe(2)
+    expect(rawShowdown.reveals.every((r) => r.cards.length === 2 && typeof r.score === 'number')).toBe(
+      true,
+    )
+
+    // Client-bound events strip all showdown reveals (scores/cards/best).
+    for (const viewer of [0, 1, null] as const) {
+      const redacted = redactEvent(rawShowdown, viewer)
+      expect(redacted).toEqual({ type: 'showdown', reveals: [] })
+    }
+
+    // Before any Show, neither seat's cards leak through the view to the other.
+    const before0 = viewFor(state, 0)
+    const before1 = viewFor(state, 1)
+    expect(before0.hand?.players.find((p) => p.seat === 0)?.holeCards).not.toBeNull()
+    expect(before0.hand?.players.find((p) => p.seat === 1)?.holeCards).toBeNull()
+    expect(before1.hand?.players.find((p) => p.seat === 1)?.holeCards).not.toBeNull()
+    expect(before1.hand?.players.find((p) => p.seat === 0)?.holeCards).toBeNull()
+    expect(viewFor(state, null).hand?.players.every((p) => p.holeCards === null)).toBe(true)
+
+    state = apply(state, { type: 'show', seat: 0 })
+    // Opponent (and spectators) see Shown cards; seat 1 still sees only own + Shown.
+    expect(viewFor(state, 1).hand?.players.find((p) => p.seat === 0)?.holeCards).not.toBeNull()
+    expect(viewFor(state, null).hand?.players.find((p) => p.seat === 0)?.holeCards).not.toBeNull()
+    expect(viewFor(state, null).hand?.players.find((p) => p.seat === 1)?.holeCards).toBeNull()
+
+    state = apply(state, { type: 'muck', seat: 1 })
+    expect(viewFor(state, 0).hand?.players.find((p) => p.seat === 1)?.holeCards).toBeNull()
+    expect(viewFor(state, null).hand?.players.find((p) => p.seat === 1)?.holeCards).toBeNull()
+    expect(state.hand?.reveal?.settled).toBe(true)
   })
 })
