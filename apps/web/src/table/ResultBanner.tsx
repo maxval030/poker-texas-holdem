@@ -41,11 +41,12 @@ export const ResultBanner = memo(function ResultBanner() {
   const deltas = [...result.deltas].sort((a, b) => a.seat - b.seat)
   const showControls = result.canShow && !result.settled
   const cardHeight = board.cardWidth * 1.5
-  const top = board.cy - cardHeight / 2 - 120
+  const gap = 24 // stage units between banner bottom and board top
+  const top = board.cy - cardHeight / 2 - gap
 
   return (
     <div
-      className="absolute z-30 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
+      className="absolute z-30 flex -translate-x-1/2 -translate-y-full flex-col items-center"
       style={{ left: board.cx, top, width: 520 }}
       role="status"
     >
