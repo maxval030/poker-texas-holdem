@@ -53,6 +53,7 @@ self.addEventListener('message', (event: MessageEvent<SoloRequest>) => {
         type: 'add-bot',
         seat: bot.seat,
         difficulty: bot.difficulty,
+        buyIn: setup.buyIn,
       })
     }
     // The first hand deals as soon as the table is seated. Later hands wait on

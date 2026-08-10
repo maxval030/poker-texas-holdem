@@ -22,7 +22,7 @@ export type ClientMessage =
   | { type: 'rebuy'; amount: number }
   | { type: 'sit-out'; sittingOut: boolean }
   | { type: 'act'; action: PlayerAction }
-  | { type: 'add-bot'; seat: number; difficulty: BotDifficulty }
+  | { type: 'add-bot'; seat: number; difficulty: BotDifficulty; buyIn?: number }
   | { type: 'remove-bot'; seat: number }
   | { type: 'start' }
   | { type: 'emote'; emote: Emote }
